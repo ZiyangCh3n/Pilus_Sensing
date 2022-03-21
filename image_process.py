@@ -6,17 +6,17 @@ from skimage import io
 import os
 import subprocess
 
-WORK_DIR = r'D:\Researchdata\031722'
+DATA_DIR = r'D:\Researchdata\ZY1'
 BFTOOL_DIR = r'C:\Users\littl\Documents\Research\pilus\bftools'
 skip_preprocess = True
 
 def Rename_Files():
     ref = {}
-    for line in open(os.path.join(WORK_DIR, 'ref.txt')):
+    for line in open(os.path.join(DATA_DIR, 'ref.txt')):
         a = line.strip().split(',')
         ref[a[0]] = a[1:]
 
-    for parent, dir, file in os.walk(WORK_DIR):
+    for parent, dir, file in os.walk(DATA_DIR):
         if not len(dir):
             n_replicate = int(len(file) / len(ref['conc']))
             rename_list = ['_'.join([strain, conc, str(rep)]) + '.nd2' 
@@ -32,7 +32,7 @@ def Rename_Files():
                 os.makedirs(make_folder)
 
 def GetTiff():
-    for parent, dir, file in os.walk(WORK_DIR):
+    for parent, dir, file in os.walk(DATA_DIR):
         file = [f for f in file if f.endswith('.nd2')] 
         if len(file):
             print(file)
@@ -50,7 +50,7 @@ if __name__ == '__main__':
         GetTiff()  
 
     dir_list = {}
-    for parent, dir, file in os.walk(WORK_DIR):
+    for parent, dir, file in os.walk(DATA_DIR):
         if not len(dir):
             bsname = os.path.basename(parent).split('_')[-1]
             dir_list[bsname] = [os.path.join(parent, f) for f in file]
