@@ -1,14 +1,12 @@
-from cv2 import threshold
 import matplotlib.pyplot as plt
 from skimage import io, filters, util, restoration, morphology
 import os
 import numpy as np
-import cv2
 
 
 DATA_DIR = r'D:\Researchdata\ZY1'
 
-def FindMask(raw_img, paras_sharp, paras_rb, paras_hys, paras_hat):
+def FindMask(file_name, raw_img, paras_sharp, paras_rb, paras_hys, paras_hat):
     sharpen_img = filters.unsharp_mask(raw_img, 
                                         radius = paras_sharp[0], 
                                         amount = paras_sharp[1],
@@ -19,7 +17,7 @@ def FindMask(raw_img, paras_sharp, paras_rb, paras_hys, paras_hat):
     bg_reduced_img = sharpen_img - normal_bg
     thresholds = filters.threshold_multiotsu(bg_reduced_img, classes = 4)
     otsu_img = np.digitize(bg_reduced_img, bins = thresholds)
-    thresh = [thr for thr in thresholds if thr > 3000][0]
+    thresh = [thr for thr in thresholds if thr >= 2500][0]
     # thresh = filters.threshold_otsu(bg_reduced_img)
     # otsu_img = (bg_reduced_img > thresh).astype(int)
     low = thresh * paras_hys
@@ -49,15 +47,17 @@ def FindMask(raw_img, paras_sharp, paras_rb, paras_hys, paras_hat):
         a.axis('off')
     
     plt.tight_layout()
+    # plt.savefig(file_name, bbox_inches = 'tight')
     plt.show()
 
 if __name__ == '__main__':
+    if not os.path.exists(os.path.join(DATA_DIR, 'mask')):
+        os.mkdir(os.path.join(DATA_DIR, 'mask'))
     for parent, dir, file in os.walk(DATA_DIR):
         if( 'tiff' in parent):
             for f in file:
                 raw_stack = io.imread(os.path.join(parent, f))
                 for i in range(raw_stack.shape[0]):
                     raw_img = raw_stack[i, ..., 2]
-                    FindMask(raw_img, [10, 2], [50, 60], .9, 1)
-                    cv2.waitKey(0)
-                    cv2.destroyAllWindows()
+                    file_name = os.path.join(DATA_DIR, 'mask', ('_'.join((os.path.splitext(f)[0], str(i))) + '.png'))
+                    FindMask(file_name, raw_img, [10, 2], [100, 60], .9, 1)
