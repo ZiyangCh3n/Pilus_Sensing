@@ -10,7 +10,14 @@ DATA_DIR = r'D:\Researchdata\ZY1'
 THRESH = []
 
 def FindMask(file_name, img_raw, paras_sharp, paras_rb, paras_otsu, paras_hys, paras_hat, paras_hist = [1024, 10]):
-    img_sharp = filters.unsharp_mask(img_raw, 
+    # img_seed = np.copy(img_raw)
+    # img_seed[1:-1, 1:-1] = img_raw.max()
+    # img_mask = img_raw
+    # img_filled = morphology.reconstruction(img_seed, img_mask, method='erosion')
+    img_filled = morphology.closing(img_raw, morphology.disk(6))
+    # img_filled = morphology.diameter_closing(img_raw, diameter_threshold = 6)
+    # img_filled = morphology.opening(img_filled, morphology.disk(1))
+    img_sharp = filters.unsharp_mask(img_filled, 
                                         radius = paras_sharp[0], 
                                         amount = paras_sharp[1],
                                         preserve_range = True)
@@ -81,7 +88,7 @@ if __name__ == '__main__':
                     raw_img = raw_stack[i, ..., 2]
                     file_name = os.path.join(DATA_DIR, 'mask', ('_'.join((os.path.splitext(f)[0], str(i))) + '.png'))
                     t0 = time.time()
-                    FindMask(file_name, raw_img, [10, 2], [100, 30], 2500, .9, 1)
+                    FindMask(file_name, raw_img, [10, 2], [100, 30], 2500, .9, 2)
                     t1 = time.time()
                     print(t1 - t0)
     print("DONE")
