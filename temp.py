@@ -1,13 +1,15 @@
 import matplotlib.pyplot as plt
 from skimage import io, filters, util, restoration, morphology
 import os
+import time
 import numpy as np
 
 
-# DATA_DIR = r'D:\Researchdata\ZY1'
-DATA_DIR = r'C:\Users\chen2\Documents\Research Project\ZY1'
+DATA_DIR = r'D:\Researchdata\ZY1'
+# DATA_DIR = r'C:\Users\chen2\Documents\Research Project\ZY1'
+THRESH = []
 
-def FindMask(file_name, img_raw, paras_sharp, paras_rb, paras_otsu, paras_hys, paras_hat):
+def FindMask(file_name, img_raw, paras_sharp, paras_rb, paras_otsu, paras_hys, paras_hat, paras_hist = [1024, 10]):
     img_sharp = filters.unsharp_mask(img_raw, 
                                         radius = paras_sharp[0], 
                                         amount = paras_sharp[1],
@@ -18,9 +20,15 @@ def FindMask(file_name, img_raw, paras_sharp, paras_rb, paras_otsu, paras_hys, p
     img_bg_reduced[img_sharp < bg_normal] = 0
     thresholds = filters.threshold_multiotsu(img_bg_reduced, classes = 4)
     img_otsu = np.digitize(img_bg_reduced, bins = thresholds)
-    hist, bins = np.histogram(img_bg_reduced.ravel(), bins=255)
+    hist, bins = np.histogram(img_bg_reduced.ravel(), bins=paras_hist[0])
     inds = [np.where(bins > thr)[0][0] for thr in thresholds]
-    thresh = thresholds[np.argmin(np.abs(hist[inds] - hist[[i - 1 for i in inds]]))]
+    diff = np.abs(hist[[i + paras_hist[1] for i in inds]] - hist[[i - paras_hist[1] for i in inds]])
+    thresh = thresholds[np.argmin(diff)]
+    if len(THRESH):
+        if np.abs(thresh - THRESH[-1]) > 0.1 * THRESH[-1]:
+            idx = np.argmin(np.abs(thresholds - THRESH[-1]))
+            thresh = thresholds[idx]
+    THRESH.append(thresh)
     # thresh = [thr for thr in thresholds if thr >= paras_otsu][0]
     low = thresh * paras_hys
     high = thresh
@@ -41,11 +49,14 @@ def FindMask(file_name, img_raw, paras_sharp, paras_rb, paras_otsu, paras_hys, p
     ax[1, 1].set_title('Hysteresis')
     ax[1, 2].imshow(img_res, cmap = 'gray')
     ax[1, 2].set_title('Tophat')
-    ax[2, 0].hist(img_bg_reduced.ravel(), bins = 256)
-    for thr in thresholds:
-        ax[2, 0].axvline(thr, color = 'r')
-    ax[2, 0].axvline(thresh, color = 'b')
-    ax[2, 0].set_title('Hist: %d' % thresh)
+    ax[2, 0].hist(img_bg_reduced.ravel(), bins = paras_hist[0])
+    for thr, dif in zip(thresholds, diff):
+        if thr == thresh:
+            ax[2, 0].axvline(thr, color = 'b', label = '%d-%d' % (thr, dif))
+        else:
+            ax[2, 0].axvline(thr, color = 'r', label = '%d-%d' % (thr, dif))
+    ax[2, 0].legend()
+    ax[2, 0].set_title('Hist: %d' % (thresh))
     ax[2, 1].imshow(bg_normal, cmap = 'gray')
     ax[2, 1].set_title('BG_normal')
     ax[2, 2].imshow(res, cmap = 'gray')
@@ -57,6 +68,7 @@ def FindMask(file_name, img_raw, paras_sharp, paras_rb, paras_otsu, paras_hys, p
     plt.tight_layout()
     plt.savefig(file_name, bbox_inches = 'tight')
     # plt.show()
+    plt.close()
 
 if __name__ == '__main__':
     if not os.path.exists(os.path.join(DATA_DIR, 'mask')):
@@ -68,5 +80,8 @@ if __name__ == '__main__':
                 for i in range(raw_stack.shape[0]):
                     raw_img = raw_stack[i, ..., 2]
                     file_name = os.path.join(DATA_DIR, 'mask', ('_'.join((os.path.splitext(f)[0], str(i))) + '.png'))
+                    t0 = time.time()
                     FindMask(file_name, raw_img, [10, 2], [100, 30], 2500, .9, 1)
+                    t1 = time.time()
+                    print(t1 - t0)
     print("DONE")
