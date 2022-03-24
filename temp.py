@@ -4,51 +4,59 @@ import os
 import numpy as np
 
 
-DATA_DIR = r'D:\Researchdata\ZY1'
+# DATA_DIR = r'D:\Researchdata\ZY1'
+DATA_DIR = r'C:\Users\chen2\Documents\Research Project\ZY1'
 
-def FindMask(file_name, raw_img, paras_sharp, paras_rb, paras_hys, paras_hat):
-    sharpen_img = filters.unsharp_mask(raw_img, 
+def FindMask(file_name, img_raw, paras_sharp, paras_rb, paras_otsu, paras_hys, paras_hat):
+    img_sharp = filters.unsharp_mask(img_raw, 
                                         radius = paras_sharp[0], 
                                         amount = paras_sharp[1],
                                         preserve_range = True)
-    bg = restoration.rolling_ball(sharpen_img, radius = paras_rb[0])
-    footprint = morphology.disk(paras_rb[1])
-    normal_bg = util.img_as_int(filters.rank.mean(util.img_as_int(bg.astype(int)), selem=footprint))
-    bg_reduced_img = sharpen_img - normal_bg
-    thresholds = filters.threshold_multiotsu(bg_reduced_img, classes = 4)
-    otsu_img = np.digitize(bg_reduced_img, bins = thresholds)
-    thresh = [thr for thr in thresholds if thr >= 2500][0]
-    # thresh = filters.threshold_otsu(bg_reduced_img)
-    # otsu_img = (bg_reduced_img > thresh).astype(int)
+    bg = restoration.rolling_ball(img_sharp, radius = paras_rb[0])
+    bg_normal = util.img_as_int(filters.rank.mean(util.img_as_int(bg.astype(int)), selem=morphology.disk(paras_rb[1])))
+    img_bg_reduced = img_sharp - bg_normal
+    img_bg_reduced[img_sharp < bg_normal] = 0
+    thresholds = filters.threshold_multiotsu(img_bg_reduced, classes = 4)
+    img_otsu = np.digitize(img_bg_reduced, bins = thresholds)
+    hist, bins = np.histogram(img_bg_reduced.ravel(), bins=255)
+    inds = [np.where(bins > thr)[0][0] for thr in thresholds]
+    thresh = thresholds[np.argmin(np.abs(hist[inds] - hist[[i - 1 for i in inds]]))]
+    # thresh = [thr for thr in thresholds if thr >= paras_otsu][0]
     low = thresh * paras_hys
     high = thresh
-    # lowt = (bg_reduced_img >= low).astype(int)
-    # hight = (bg_reduced_img >= high).astype(int)
-    hyst_img = filters.apply_hysteresis_threshold(bg_reduced_img, low, high).astype(int)
-    footprint = morphology.disk(paras_hat)
-    res = morphology.white_tophat(hyst_img, footprint)
-    res_img = hyst_img - res.astype(int)
+    img_hyst = filters.apply_hysteresis_threshold(img_bg_reduced, low, high).astype(int)
+    res = morphology.white_tophat(img_hyst, morphology.disk(paras_hat))
+    img_res = img_hyst - res.astype(int)
 
-    fig, ax = plt.subplots(nrows = 2, ncols = 3, figsize = (10, 10))
-    ax[0, 0].imshow(raw_img, cmap = 'gray')
+    fig, ax = plt.subplots(nrows = 3, ncols = 3, figsize = (10, 10))
+    ax[0, 0].imshow(img_raw, cmap = 'gray')
     ax[0, 0].set_title('Raw')
-    ax[0, 1].imshow(sharpen_img, cmap = 'gray')
+    ax[0, 1].imshow(img_sharp, cmap = 'gray')
     ax[0, 1].set_title('Sharpened')
-    ax[0, 2].imshow(bg_reduced_img, cmap = 'gray')
+    ax[0, 2].imshow(img_bg_reduced, cmap = 'gray')
     ax[0, 2].set_title('BG reduced')
-    ax[1, 0].imshow(otsu_img, cmap = 'jet')
+    ax[1, 0].imshow(img_otsu, cmap = 'jet')
     ax[1, 0].set_title('OTSU')
-    ax[1, 1].imshow(hyst_img, cmap = 'gray')
+    ax[1, 1].imshow(img_hyst, cmap = 'gray')
     ax[1, 1].set_title('Hysteresis')
-    ax[1, 2].imshow(res_img, cmap = 'gray')
+    ax[1, 2].imshow(img_res, cmap = 'gray')
     ax[1, 2].set_title('Tophat')
+    ax[2, 0].hist(img_bg_reduced.ravel(), bins = 256)
+    for thr in thresholds:
+        ax[2, 0].axvline(thr, color = 'r')
+    ax[2, 0].axvline(thresh, color = 'b')
+    ax[2, 0].set_title('Hist: %d' % thresh)
+    ax[2, 1].imshow(bg_normal, cmap = 'gray')
+    ax[2, 1].set_title('BG_normal')
+    ax[2, 2].imshow(res, cmap = 'gray')
+    ax[2, 2].set_title('Res')
 
     for a in ax.ravel():
         a.axis('off')
     
     plt.tight_layout()
-    # plt.savefig(file_name, bbox_inches = 'tight')
-    plt.show()
+    plt.savefig(file_name, bbox_inches = 'tight')
+    # plt.show()
 
 if __name__ == '__main__':
     if not os.path.exists(os.path.join(DATA_DIR, 'mask')):
@@ -60,4 +68,5 @@ if __name__ == '__main__':
                 for i in range(raw_stack.shape[0]):
                     raw_img = raw_stack[i, ..., 2]
                     file_name = os.path.join(DATA_DIR, 'mask', ('_'.join((os.path.splitext(f)[0], str(i))) + '.png'))
-                    FindMask(file_name, raw_img, [10, 2], [100, 60], .9, 1)
+                    FindMask(file_name, raw_img, [10, 2], [100, 30], 2500, .9, 1)
+    print("DONE")
