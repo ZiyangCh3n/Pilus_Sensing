@@ -5,15 +5,12 @@ import time
 import numpy as np
 
 
-DATA_DIR = r'D:\Researchdata\ZY1'
+# DATA_DIR = r'D:\Researchdata\ZY1'
+DATA_DIR = r'/scratch/network/ziyangc/temp_test/'
 # DATA_DIR = r'C:\Users\chen2\Documents\Research Project\ZY1'
 THRESH = []
 
 def FindMask(file_name, img_raw, paras_sharp, paras_rb, paras_hys, paras_hat, paras_hist = [1024, 10]):
-    # img_seed = np.copy(img_raw)
-    # img_seed[1:-1, 1:-1] = img_raw.max()
-    # img_mask = img_raw
-    # img_filled = morphology.reconstruction(img_seed, img_mask, method='erosion')
     img_filled = morphology.closing(img_raw, morphology.disk(6))
     # img_filled = morphology.diameter_closing(img_raw, diameter_threshold = 6)
     # img_filled = morphology.opening(img_filled, morphology.disk(1))
@@ -22,7 +19,9 @@ def FindMask(file_name, img_raw, paras_sharp, paras_rb, paras_hys, paras_hat, pa
                                         amount = paras_sharp[1],
                                         preserve_range = True)
     bg = restoration.rolling_ball(img_sharp, radius = paras_rb[0])
-    bg_normal = util.img_as_int(filters.rank.mean(util.img_as_int(bg.astype(int)), selem=morphology.disk(paras_rb[1])))
+    # bg_normal = util.img_as_int(filters.rank.mean(util.img_as_int(bg.astype(int)), selem=morphology.disk(paras_rb[1])))
+    bg_normal = util.img_as_uint(filters.rank.mean(util.img_as_uint(bg.astype(int)), selem=morphology.disk(paras_rb[1])))
+    img_bg_reduced = img_sharp - bg_normal
     img_bg_reduced = img_sharp - bg_normal
     img_bg_reduced[img_sharp < bg_normal] = 0
     thresholds = filters.threshold_multiotsu(img_bg_reduced, classes = 4)
@@ -36,7 +35,6 @@ def FindMask(file_name, img_raw, paras_sharp, paras_rb, paras_hys, paras_hat, pa
             idx = np.argmin(np.abs(thresholds - THRESH[-1]))
             thresh = thresholds[idx]
     THRESH.append(thresh)
-    # thresh = [thr for thr in thresholds if thr >= paras_otsu][0]
     low = thresh * paras_hys
     high = thresh
     img_hyst = filters.apply_hysteresis_threshold(img_bg_reduced, low, high).astype(int)
