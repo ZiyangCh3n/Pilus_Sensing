@@ -1,13 +1,23 @@
 import numpy as np
 import pandas as pd
-from nd2reader import ND2Reader
+# from nd2reader import ND2Reader
 import matplotlib.pyplot as plt
 from skimage import io
 import os
 import subprocess
+import sys
+import time
 
-DATA_DIR = r'D:\Researchdata\ZY1'
-BFTOOL_DIR = r'C:\Users\littl\Documents\Research\pilus\bftools'
+ARGS = sys.argv
+DATA_DIR = os.path.join(os.path.dirname(os.getcwd()), 'data', ARGS[1])
+log = open(os.path.join(DATA_DIR, 'log'), 'a')
+log.write('-' * 10 + 'CONVERSION' + '-' * 10 + '\n')
+log.write('Created at: ' + time.asctime(time.localtime(time.time())) + '\n')
+log.write('DATA_DIR: ' + DATA_DIR + '\n')
+# sys.exit(0)
+# DATA_DIR = r'D:\Researchdata\ZY1'
+BFTOOL_DIR = os.path.join(os.path.dirname(os.getcwd()), 'bftools/')
+# BFTOOL_DIR = r'C:\Users\littl\Documents\Research\pilus\bftools'
 skip_preprocess = False
 
 def Rename_Files():
@@ -19,7 +29,7 @@ def Rename_Files():
     for parent, dir, file in os.walk(DATA_DIR):
         if not len(dir):
             n_replicate = int(len(file) / len(ref['conc']))
-            rename_list = ['_'.join([strain, conc, str(rep)]) + '.nd2' 
+            rename_list = ['_'.join([strain, str(float(conc)), str(rep).zfill(2)]) + '.nd2' 
             for strain in ref['strain'] 
             for conc in ref['conc']
             for rep in np.arange(n_replicate)]
@@ -32,6 +42,8 @@ def Rename_Files():
                 os.makedirs(make_folder)
 
 def GetTiff():
+    # subprocess.run(['chmod', '+x', './bfconvert'], cwd = BFTOOL_DIR, shell = True)
+    # subprocess.run([BFTOOL_DIR, 'chmod', '+x', './bfconvert'])
     for parent, dir, file in os.walk(DATA_DIR):
         file = [f for f in file if f.endswith('.nd2')] 
         if len(file):
@@ -40,14 +52,22 @@ def GetTiff():
                 input_dir = os.path.join(parent, f)
                 output_dir = os.path.join(os.path.join(parent.replace('_nd2', '_tiff'), f.replace('.nd2', '.tiff')))
                 # command = 'bfconvert ' + input_dir + ' ' + output_dir
-                # subprocess.run(['bfconvert', input_dir, output_dir], cwd = BFTOOL_DIR, shell = True)
-                subprocess.Popen(['bfconvert', input_dir, output_dir], cwd = BFTOOL_DIR, shell = True) # This is faster
-                print(f'{i + 1} out of {len(file)} convertion finished.')
+
+               
+                # subprocess.run(['./bfconvert', input_dir, output_dir], cwd = BFTOOL_DIR, shell = True)
+                # subprocess.Popen(['./bfconvert', input_dir, output_dir], cwd = BFTOOL_DIR, shell = True) # This is faster
+                subprocess.run([BFTOOL_DIR + 'bfconvert', input_dir, output_dir])
+                # print(f'{i + 1} out of {len(file)} convertion finished.')
 
 if __name__ == '__main__':
+    t0 = time.time()
     if not skip_preprocess:
         Rename_Files()
-        GetTiff()  
+        GetTiff()
+    time.sleep(5)
+    t1 = time.time()
+    log.write('Total time in min: ' + str(round((t1 - t0) /60, 2)) + '\n')
+    log.close()  
 
     # dir_list = {}
     # for parent, dir, file in os.walk(DATA_DIR):
@@ -72,7 +92,5 @@ if __name__ == '__main__':
 #     n_position = img_stack.shape[0]
 #     n_timepoint = img_stack.shape[1] 
 
-
-print('done')
 
 

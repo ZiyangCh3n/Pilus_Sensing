@@ -3,12 +3,18 @@ from skimage import io, filters, util, restoration, morphology
 import os
 import time
 import numpy as np
+import sys
 
-
+ARG = sys.argv
 # DATA_DIR = r'D:\Researchdata\ZY1'
-DATA_DIR = r'/scratch/network/ziyangc/temp_test/'
+DATA_DIR = os.path.join(os.path.dirname(os.getcwd()), 'data', ARG[1])
 # DATA_DIR = r'C:\Users\chen2\Documents\Research Project\ZY1'
 THRESH = []
+log = open(os.path.join(DATA_DIR, 'log'), 'a')
+log.write('-'*10 + 'Masking' + '_'*10 + '\n')
+log.write('Started at: ' + time.asctime(time.localtime(time.time())) + '\n')
+log.write('DATA_DIR: ' + DATA_DIR + '\n')
+
 
 def FindMask(file_name, img_raw, paras_sharp, paras_rb, paras_hys, paras_hat, paras_hist = [1024, 10]):
     img_filled = morphology.closing(img_raw, morphology.disk(6))
@@ -76,6 +82,7 @@ def FindMask(file_name, img_raw, paras_sharp, paras_rb, paras_hys, paras_hat, pa
     plt.close()
 
 if __name__ == '__main__':
+    t0 = time.time()
     if not os.path.exists(os.path.join(DATA_DIR, 'mask')):
         os.mkdir(os.path.join(DATA_DIR, 'mask'))
     for parent, dir, file in os.walk(DATA_DIR):
@@ -84,9 +91,9 @@ if __name__ == '__main__':
                 raw_stack = io.imread(os.path.join(parent, f))
                 for i in range(raw_stack.shape[0]):
                     raw_img = raw_stack[i, ..., 2]
-                    file_name = os.path.join(DATA_DIR, 'mask', ('_'.join((os.path.splitext(f)[0], str(i))) + '.png'))
-                    t0 = time.time()
+                    file_name = os.path.join(DATA_DIR, 'mask', ('_'.join((os.path.splitext(f)[0], str(i).zfill(2))) + '.png'))
                     FindMask(file_name, raw_img, [10, 2], [60, 30], .9, 2)
-                    t1 = time.time()
-                    print(t1 - t0)
-    print("DONE")
+    t1 = time.time()
+    log.write('Total time in min: ' + str(round((t1 - t0) / 60, 2)) + '\n')
+    log.close()
+    # print("DONE")
