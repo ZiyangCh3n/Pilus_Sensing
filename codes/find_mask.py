@@ -26,7 +26,7 @@ def FindMin(hist, bins, thresholds, window_width = 20):
     min_inds_relative = [np.argmin(moving_diff[a:b]) for a, b in zip(lb, rb)]
     min_inds = np.sum([min_inds_relative, lb], axis = 0)
     bin_min = moving_bins[min_inds]
-    return moving_diff_min, bin_min
+    return moving_diff_min, np.int32(bin_min)
 
 def FindMask(file_name, img_raw, paras_close, paras_sharp, paras_rb, paras_hys, paras_hat, paras_hist = [1024, 10]):
     img_filled = morphology.closing(img_raw, morphology.disk(paras_close))
