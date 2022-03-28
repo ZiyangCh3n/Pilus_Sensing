@@ -4,6 +4,7 @@ bftools/
 # data related
 data/
 *.out
+*.slurm
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
