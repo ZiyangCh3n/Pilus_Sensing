@@ -1,8 +1,9 @@
 # BFtools
 bftools/
 
-# data
+# data related
 data/
+*.out
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
