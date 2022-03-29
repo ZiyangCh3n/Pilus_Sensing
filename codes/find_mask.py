@@ -7,7 +7,6 @@ import sys
 
 ARG = sys.argv
 DATA_DIR = os.path.join(os.path.dirname(os.getcwd()), 'data', ARG[1])
-THRESH = []
 log = open(os.path.join(DATA_DIR, 'log'), 'a')
 log.write('-'*10 + 'Masking' + '-'*10 + '\n')
 log.write('Started at: ' + time.asctime(time.localtime(time.time())) + '\n')
@@ -53,7 +52,7 @@ def FindMask(file_name, img_raw, paras_close, paras_sharp, paras_rb, paras_hys, 
     if len(THRESH):
         if np.abs(thresh - THRESH[-1]) > 0.4 * THRESH[-1]:
             idx = np.argmin(np.abs(thresholds - THRESH[-1]))
-            thresh = thresholds[idx]
+            thresh = thresh_min[idx]
     THRESH.append(thresh)
     low = thresh * paras_hys
     high = thresh
@@ -103,12 +102,13 @@ if __name__ == '__main__':
         if( 'tiff' in parent):
             for f in file:
                 raw_stack = io.imread(os.path.join(parent, f))
+                THRESH = []
                 for i in range(raw_stack.shape[0]):
                     raw_img = raw_stack[i, ..., 2]
                     rb_radius = 60
                     rb_radius = 30 + np.int(i * 30 / raw_stack.shape[0])
                     file_name = os.path.join(DATA_DIR, 'mask', ('_'.join((os.path.splitext(f)[0], str(i).zfill(2))) + '.png'))
-                    FindMask(file_name, raw_img, 6, [10, 2], [rb_radius, 60], .95, 2)
+                    FindMask(file_name, raw_img, 6, [10, 2], [rb_radius, 60], .98, 2)
     t1 = time.time()
     log.write('Total time in min: ' + str(round((t1 - t0) / 60, 2)) + '\n')
     log.close()
