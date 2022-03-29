@@ -12,7 +12,7 @@ log.write('-'*10 + 'Masking' + '-'*10 + '\n')
 log.write('Started at: ' + time.asctime(time.localtime(time.time())) + '\n')
 log.write('DATA_DIR: ' + DATA_DIR + '\n')
 
-def FindMin(hist, bins, thresholds, window_width = 20):
+def FindMin(hist, bins, thresholds, window_width = 10):
     cumsum = np.cumsum(hist)
     half_width = int(window_width / 2)
     moving_average = (cumsum[window_width:] - cumsum[:-window_width]) / window_width
@@ -93,9 +93,12 @@ def FindMask(file_name, img_raw, paras_close, paras_sharp, paras_rb, paras_hys, 
     plt.savefig(file_name, bbox_inches = 'tight')
     # plt.show()
     plt.close()
+    return img_res
 
 if __name__ == '__main__':
     t0 = time.time()
+    if not os.path.exists(os.path.join(DATA_DIR, 'mask_ref')):
+        os.mkdir(os.path.join(DATA_DIR, 'mask_ref'))
     if not os.path.exists(os.path.join(DATA_DIR, 'mask')):
         os.mkdir(os.path.join(DATA_DIR, 'mask'))
     for parent, dir, file in os.walk(DATA_DIR):
@@ -107,8 +110,11 @@ if __name__ == '__main__':
                     raw_img = raw_stack[i, ..., 2]
                     rb_radius = 60
                     rb_radius = 30 + np.int(i * 30 / raw_stack.shape[0])
-                    file_name = os.path.join(DATA_DIR, 'mask', ('_'.join((os.path.splitext(f)[0], str(i).zfill(2))) + '.png'))
-                    FindMask(file_name, raw_img, 6, [10, 2], [rb_radius, 60], .98, 2)
+                    file_name = os.path.join(DATA_DIR, 'mask_ref', ('_'.join((os.path.splitext(f)[0], str(i).zfill(2))) + '.png'))
+                    mask = FindMask(file_name, raw_img, 6, [10, 2], [rb_radius, 60], 1, 2)
+                    # np.save(file_name.replace('mask_ref', 'mask', 1).replace('.png', '.npy', 1), np.bool_(mask))
+                    io.imsave(file_name.replace('mask_ref', 'mask', 1), mask)
+                    # np.savetxt(file_name.replace('mask_ref', 'mask', 1).replace('.png', '.csv', 1), mask, delimiter = ',')
     t1 = time.time()
     log.write('Total time in min: ' + str(round((t1 - t0) / 60, 2)) + '\n')
     log.close()
