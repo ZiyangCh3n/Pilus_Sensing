@@ -36,9 +36,8 @@ def FindMask(file_name, img_raw, paras_close, paras_sharp, paras_rb, paras_hys, 
                                         amount = paras_sharp[1],
                                         preserve_range = True)
     bg = restoration.rolling_ball(img_sharp, radius = paras_rb[0])
-    bg_normal = util.img_as_int(filters.rank.mean(util.img_as_int(bg.astype(int)), selem=morphology.disk(paras_rb[1])))
-    # bg_normal = util.img_as_uint(filters.rank.mean(util.img_as_uint(bg.astype(int)), selem=morphology.disk(paras_rb[1])))
-    img_bg_reduced = img_sharp - bg_normal
+    # bg_normal = util.img_as_int(filters.rank.mean(util.img_as_int(bg.astype(int)), selem=morphology.disk(paras_rb[1])))
+    bg_normal = util.img_as_uint(filters.rank.mean(util.img_as_uint(bg.astype(int)), selem=morphology.disk(paras_rb[1])))
     img_bg_reduced = img_sharp - bg_normal
     img_bg_reduced[img_sharp < bg_normal] = 0
     thresholds = filters.threshold_multiotsu(img_bg_reduced, classes = 4)
@@ -50,7 +49,7 @@ def FindMask(file_name, img_raw, paras_close, paras_sharp, paras_rb, paras_hys, 
     thresh = thresh_min[np.argmin(diff)]
     # thresh = thresholds[np.argmin(diff)]
     if len(THRESH):
-        if np.abs(thresh - THRESH[-1]) > 0.4 * THRESH[-1]:
+        if np.abs(thresh - THRESH[-1]) > 0.2 * THRESH[-1]:
             idx = np.argmin(np.abs(thresholds - THRESH[-1]))
             thresh = thresh_min[idx]
     THRESH.append(thresh)
