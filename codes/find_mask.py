@@ -12,20 +12,42 @@ log.write('-'*10 + 'Masking' + '-'*10 + '\n')
 log.write('Started at: ' + time.asctime(time.localtime(time.time())) + '\n')
 log.write('DATA_DIR: ' + DATA_DIR + '\n')
 
-def FindMin(hist, bins, thresholds, window_width = 10):
-    cumsum = np.cumsum(hist)
+def SmoothByAvg(window_width, x, y):
+    cumsum = np.cumsum(y)
     half_width = int(window_width / 2)
-    moving_average = (cumsum[window_width:] - cumsum[:-window_width]) / window_width
-    moving_bins = bins[half_width : -half_width]
-    inds = [np.where(moving_bins > thr)[0][0] for thr in thresholds]
-    lb = [idx - half_width if idx > half_width else 0 for idx in inds]
-    rb = [idx + half_width if idx + half_width < len(moving_bins) -1 else len(moving_bins) -1 for idx in inds]
-    moving_diff = np.abs(np.diff(moving_average, 1))
-    moving_diff_min = np.int32([np.min(moving_diff[a:b]) / 10 for a, b in zip(lb, rb)])
-    min_inds_relative = [np.argmin(moving_diff[a:b]) for a, b in zip(lb, rb)]
-    min_inds = np.sum([min_inds_relative, lb], axis = 0)
-    bin_min = moving_bins[min_inds]
-    return moving_diff_min, np.int32(bin_min)
+    moving_avg = (cumsum[window_width:] - cumsum[:-window_width]) / window_width
+    moving_bins = x[half_width:-half_width]
+    return moving_bins, moving_avg
+
+def FindMin(hist, bins, thresholds, window_width = 10):
+    width_half = int(window_width / 2)
+    bins_s, hist_s = SmoothByAvg(window_width, bins, hist)
+    diff = np.abs(np.diff(hist_s, 1))
+    bins_ss, diff_s = SmoothByAvg(window_width, bins_s[1:-1], diff)
+    bins_sss, diff_ss = SmoothByAvg(window_width, bins_ss, diff_s)
+    diff_ss = np.int16(diff_ss)
+    thresh_m = bins_sss[np.argmin(diff_ss)]
+    thresholds = np.sort(np.append(thresholds, thresh_m))
+    inds = [np.where(bins_sss > thr)[0][0] for thr in thresholds]
+    lb = [idx - width_half if idx > width_half else 0 for idx in inds]
+    rb = [idx + width_half if idx + width_half < len(bins_sss) -1 else len(bins_sss) -1 for idx in inds]
+    diff_ss_min = [np.min(diff_ss[a:b]) for a, b in zip(lb, rb)]
+    bins_sss_min = bins_sss[np.sum([[np.argmin(diff_ss[a:b]) for a, b in zip(lb, rb)], lb], axis = 0)]
+    return diff_ss_min, bins_sss_min
+
+    # cumsum = np.cumsum(hist)
+    # half_width = int(window_width / 2)
+    # moving_average = (cumsum[window_width:] - cumsum[:-window_width]) / window_width
+    # moving_bins = bins[half_width : -half_width]
+    # inds = [np.where(moving_bins > thr)[0][0] for thr in thresholds]
+    # lb = [idx - half_width if idx > half_width else 0 for idx in inds]
+    # rb = [idx + half_width if idx + half_width < len(moving_bins) -1 else len(moving_bins) -1 for idx in inds]
+    # moving_diff = np.abs(np.diff(moving_average, 1))
+    # moving_diff_min = np.int32([np.min(moving_diff[a:b]) / 10 for a, b in zip(lb, rb)])
+    # min_inds_relative = [np.argmin(moving_diff[a:b]) for a, b in zip(lb, rb)]
+    # min_inds = np.sum([min_inds_relative, lb], axis = 0)
+    # bin_min = moving_bins[min_inds]
+    # return moving_diff_min, np.int32(bin_min)
 
 def FindMask(file_name, img_raw, paras_close, paras_sharp, paras_rb, paras_hys, paras_hat, paras_hist = [1024, 10]):
     img_filled = morphology.closing(img_raw, morphology.disk(paras_close))
@@ -75,7 +97,10 @@ def FindMask(file_name, img_raw, paras_close, paras_sharp, paras_rb, paras_hys, 
     ax[2, 0].hist(img_bg_reduced.ravel(), bins = paras_hist[0])
     for thr, dif in zip(thresh_min, diff):
         if thr == thresh:
-            ax[2, 0].axvline(thr, color = 'b', label = '%d-%d' % (thr, dif))
+            if thr in thresholds:
+                ax[2, 0].axvline(thr, color = 'b', label = '%d-%d' % (thr, dif))
+            else:
+                ax[2, 0].axvline(thr, color = 'g', label = '%d-%d' % (thr, dif))
         else:
             ax[2, 0].axvline(thr, color = 'r', label = '%d-%d' % (thr, dif))
     ax[2, 0].legend()
