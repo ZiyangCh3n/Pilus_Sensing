@@ -17,6 +17,8 @@ def SmoothByAvg(window_width, x, y):
     return moving_bins, moving_avg
 
 def FindMin(hist, bins, thresholds, window_width = 10):
+    hist = hist[1:]
+    bins = bins[1:]
     width_half = int(window_width / 2)
     bins_s, hist_s = SmoothByAvg(window_width, bins, hist)
     diff = np.abs(np.diff(hist_s, 1))
@@ -46,7 +48,7 @@ def FindMin(hist, bins, thresholds, window_width = 10):
     # bin_min = moving_bins[min_inds]
     # return moving_diff_min, np.int32(bin_min)
 
-def FindMask(file_name, img_raw, paras_close, paras_sharp, paras_rb, paras_hys, paras_hat, paras_hist = [1024, 10]):
+def FindMask(file_name, img_raw, paras_close, paras_sharp, paras_rb, paras_hys, paras_hat, paras_hist = [1025, 10]):
     img_filled = morphology.closing(img_raw, morphology.disk(paras_close))
     # img_filled = morphology.diameter_closing(img_raw, diameter_threshold = 6)
     # img_filled = morphology.opening(img_filled, morphology.disk(1))
