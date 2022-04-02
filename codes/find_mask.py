@@ -16,15 +16,15 @@ def SmoothByAvg(window_width, x, y):
     moving_bins = x[half_width:-half_width]
     return moving_bins, moving_avg
 
-def FindMin(hist, bins, thresholds, window_width = 10):
+def FindMin(hist, bins, thresholds, window_width = 10, flat = 1):
     hist = hist[1:]
     bins = bins[1:]
     width_half = int(window_width / 2)
     bins_s, hist_s = SmoothByAvg(window_width, bins, hist)
-    diff = np.abs(np.diff(hist_s, 1))
+    diff = np.diff(hist_s, 1)
     bins_ss, diff_s = SmoothByAvg(window_width, bins_s[1:-1], diff)
     bins_sss, diff_ss = SmoothByAvg(window_width, bins_ss, diff_s)
-    diff_ss = np.int16(diff_ss)
+    diff_ss = np.int16(np.abs(diff_ss) / flat) * flat
     thresh_m = bins_sss[np.argmin(diff_ss)]
     thresholds = np.sort(np.append(thresholds, thresh_m))
     inds = [np.where(bins_sss > thr)[0][0] for thr in thresholds]
@@ -32,7 +32,14 @@ def FindMin(hist, bins, thresholds, window_width = 10):
     rb = [idx + width_half if idx + width_half < len(bins_sss) -1 else len(bins_sss) -1 for idx in inds]
     diff_ss_min = [np.min(diff_ss[a:b]) for a, b in zip(lb, rb)]
     bins_sss_min = bins_sss[np.sum([[np.argmin(diff_ss[a:b]) for a, b in zip(lb, rb)], lb], axis = 0)]
-    return diff_ss_min, bins_sss_min
+    # plt.title(thresh_m)
+    # plt.plot(bins_sss, diff_ss)
+    # for bin, dif in zip(bins_sss_min, diff_ss_min):
+    #     plt.axvline(bin, label = '%d-%d' % (bin, dif))
+    #     plt.legend()
+    # plt.show()
+    # plt.close()
+    return diff_ss_min, bins_sss_min, thresh_m
 
     # cumsum = np.cumsum(hist)
     # half_width = int(window_width / 2)
@@ -66,17 +73,22 @@ def FindMask(file_name, img_raw, paras_close, paras_sharp, paras_rb, paras_hys, 
     hist, bins = np.histogram(img_bg_reduced.ravel(), bins=paras_hist[0])
     # inds = [np.where(bins > thr)[0][0] for thr in thresholds]
     # diff = np.abs(hist[[i + paras_hist[1] for i in inds]] - hist[[i - paras_hist[1] for i in inds]])
-    diff, thresh_min = FindMin(hist, bins, thresholds)
+    diff, thresh_min, thresh_m = FindMin(hist, bins, thresholds)
     thresh = thresh_min[np.argmin(diff)]
     # thresh = thresholds[np.argmin(diff)]
     if len(THRESH):
-        if np.abs(thresh - THRESH[-1]) > 0.2 * THRESH[-1]:
-            idx = np.argmin(np.abs(thresh_min - THRESH[-1]))
-            thresh = thresh_min[idx]
+        if np.abs(thresh - THRESH[-1]) > 0.3 * THRESH[-1]:
+            thresh_min_f = [thr for thr in thresh_min if np.abs(thr - THRESH[-1]) <= 0.3 * THRESH[-1]]
+            if len(thresh_min_f):
+                idx = np.argmin(np.abs(thresh_min_f - THRESH[-1]))
+                thresh = thresh_min_f[idx]
+            else:
+                thresh = THRESH[-1]
     THRESH.append(thresh)
     low = thresh * paras_hys
     high = thresh
-    img_hyst = filters.apply_hysteresis_threshold(img_bg_reduced, low, high).astype(int)
+    img_hyst = filters.apply_hysteresis_threshold(img_bg_reduced, low, high)
+    img_hyst = morphology.binary_closing(img_hyst, selem = morphology.disk(paras_hat * 2)).astype(int)
     res = morphology.white_tophat(img_hyst, morphology.disk(paras_hat))
     img_res = img_hyst - res.astype(int)
 
@@ -87,7 +99,7 @@ def FindMask(file_name, img_raw, paras_close, paras_sharp, paras_rb, paras_hys, 
     ax[0, 1].set_title('Sharpened')
     ax[0, 2].imshow(img_bg_reduced, cmap = 'gray')
     ax[0, 2].set_title('BG reduced, r = %d' % paras_rb[0])
-    ax[1, 0].imshow(img_otsu, cmap = 'jet')
+    ax[1, 0].imshow(img_otsu, cmap = 'turbo')
     ax[1, 0].set_title('OTSU')
     ax[1, 1].imshow(img_hyst, cmap = 'gray')
     ax[1, 1].set_title('Hysteresis')
@@ -96,7 +108,7 @@ def FindMask(file_name, img_raw, paras_close, paras_sharp, paras_rb, paras_hys, 
     ax[2, 0].hist(img_bg_reduced.ravel(), bins = paras_hist[0])
     for thr, dif in zip(thresh_min, diff):
         if thr == thresh:
-            if thr in thresholds:
+            if thr != thresh_m:
                 ax[2, 0].axvline(thr, color = 'b', label = '%d-%d' % (thr, dif))
             else:
                 ax[2, 0].axvline(thr, color = 'g', label = '%d-%d' % (thr, dif))
@@ -134,7 +146,7 @@ if __name__ == '__main__':
                     rb_radius = 60
                     rb_radius = 30 + np.int(i * 30 / raw_stack.shape[0])
                     file_name = os.path.join(DATA_DIR, 'mask_ref', ('_'.join((os.path.splitext(f)[0], str(i).zfill(2))) + '.png'))
-                    mask = FindMask(file_name, raw_img, 6, [10, 2], [rb_radius, 60], 1, 2)
+                    mask = FindMask(file_name, raw_img, 6, [10, 2], [rb_radius, 60], .8, 2)
                     # np.save(file_name.replace('mask_ref', 'mask', 1).replace('.png', '.npy', 1), np.bool_(mask))
                     io.imsave(file_name.replace('mask_ref', 'mask', 1), mask)
                     # np.savetxt(file_name.replace('mask_ref', 'mask', 1).replace('.png', '.csv', 1), mask, delimiter = ',')
