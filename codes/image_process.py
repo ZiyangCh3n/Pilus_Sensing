@@ -10,10 +10,8 @@ import time
 
 ARGS = sys.argv
 DATA_DIR = os.path.join(os.path.dirname(os.getcwd()), 'data', ARGS[1])
-log = open(os.path.join(DATA_DIR, 'log'), 'a')
-log.write('-' * 10 + 'CONVERSION' + '-' * 10 + '\n')
-log.write('Created at: ' + time.asctime(time.localtime(time.time())) + '\n')
-log.write('DATA_DIR: ' + DATA_DIR + '\n')
+T_START = time.asctime(time.localtime(time.time()))
+
 # sys.exit(0)
 # DATA_DIR = r'D:\Researchdata\ZY1'
 BFTOOL_DIR = os.path.join(os.path.dirname(os.getcwd()), 'bftools/')
@@ -66,8 +64,12 @@ if __name__ == '__main__':
         GetTiff()
     time.sleep(5)
     t1 = time.time()
-    log.write('Total time in min: ' + str(round((t1 - t0) /60, 2)) + '\n')
-    log.close()  
+    with open(os.path.join(DATA_DIR, 'log'), 'a') as log:
+        log.write('-' * 10 + 'CONVERSION' + '-' * 10 + '\n')
+        log.write('Created at: ' + T_START + '\n')
+        log.write('DATA_DIR: ' + DATA_DIR + '\n')
+        log.write('Total time in min: ' + str(round((t1 - t0) /60, 2)) + '\n')
+    # log.close()  
 
     # dir_list = {}
     # for parent, dir, file in os.walk(DATA_DIR):

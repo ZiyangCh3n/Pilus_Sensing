@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
+from codes.find_mask import T_START
 from skimage import io, restoration, filters, util, morphology
 import os, sys
 import time
@@ -9,11 +10,7 @@ YFP = 1 # YFP channel is the 2nd
 DATA_DIR = os.path.join(os.path.dirname(os.getcwd()), 'data', ARG[1])
 MASK_DIR = os.path.join(DATA_DIR, 'mask')
 IMG_DIR = os.path.join(DATA_DIR, [folder for folder in os.listdir(DATA_DIR) if folder.endswith('tiff')][0])
-
-log = open(os.path.join(DATA_DIR, 'log'), 'a')
-log.write('-'*10 + 'Calculate YFP' + '-'*10 + '\n')
-log.write('Started at: ' + time.asctime(time.localtime(time.time())) + '\n')
-log.write('DATA_DIR: ' + DATA_DIR + '\n')
+T_START = time.asctime(time.localtime(time.time()))
 
 def GetMasked(dir_img, dir_mask, filename, timepoint, paras_rb = [150, 60]):
     img_stack = io.imread(dir_img)
@@ -62,4 +59,10 @@ if __name__ == '__main__':
                         timepoint = int(f[11:13])
                         file_name = os.path.join(DATA_DIR, 'YFP_ref', f)
                         img_masked = GetMasked(dir_img, dir_mask, file_name, timepoint)
+    t1 = time.time()
+    with open(os.path.join(DATA_DIR, 'log'), 'a') as log
+        log.write('-'*10 + 'Calculate YFP' + '-'*10 + '\n')
+        log.write('Started at: ' + T_START + '\n')
+        log.write('DATA_DIR: ' + DATA_DIR + '\n')
+        log.write('Totaltime in min: ' + str(round((t1 - t0) / 60, 2)) + '\n')
 

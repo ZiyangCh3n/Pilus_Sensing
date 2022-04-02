@@ -7,10 +7,7 @@ import sys
 
 ARG = sys.argv
 DATA_DIR = os.path.join(os.path.dirname(os.getcwd()), 'data', ARG[1])
-log = open(os.path.join(DATA_DIR, 'log'), 'a')
-log.write('-'*10 + 'Masking' + '-'*10 + '\n')
-log.write('Started at: ' + time.asctime(time.localtime(time.time())) + '\n')
-log.write('DATA_DIR: ' + DATA_DIR + '\n')
+T_START = time.asctime(time.localtime(time.time()))
 
 def SmoothByAvg(window_width, x, y):
     cumsum = np.cumsum(y)
@@ -72,7 +69,7 @@ def FindMask(file_name, img_raw, paras_close, paras_sharp, paras_rb, paras_hys, 
     # thresh = thresholds[np.argmin(diff)]
     if len(THRESH):
         if np.abs(thresh - THRESH[-1]) > 0.2 * THRESH[-1]:
-            idx = np.argmin(np.abs(thresholds - THRESH[-1]))
+            idx = np.argmin(np.abs(thresh_min - THRESH[-1]))
             thresh = thresh_min[idx]
     THRESH.append(thresh)
     low = thresh * paras_hys
@@ -140,6 +137,11 @@ if __name__ == '__main__':
                     io.imsave(file_name.replace('mask_ref', 'mask', 1), mask)
                     # np.savetxt(file_name.replace('mask_ref', 'mask', 1).replace('.png', '.csv', 1), mask, delimiter = ',')
     t1 = time.time()
-    log.write('Total time in min: ' + str(round((t1 - t0) / 60, 2)) + '\n')
-    log.close()
+    with open(os.path.join(DATA_DIR, 'log'), 'a') as log:
+        log = open(os.path.join(DATA_DIR, 'log'), 'a')
+        log.write('-'*10 + 'Masking' + '-'*10 + '\n')
+        log.write('Started at: ' + T_START + '\n')
+        log.write('DATA_DIR: ' + DATA_DIR + '\n')
+        log.write('Total time in min: ' + str(round((t1 - t0) / 60, 2)) + '\n')
+    # log.close()
     # print("DONE")
