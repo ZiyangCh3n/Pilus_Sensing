@@ -11,11 +11,8 @@ import time
 ARGS = sys.argv
 DATA_DIR = os.path.join(os.path.dirname(os.getcwd()), 'data', ARGS[1])
 T_START = time.asctime(time.localtime(time.time()))
-
-# sys.exit(0)
-# DATA_DIR = r'D:\Researchdata\ZY1'
+CHANNEL = {'phase': 0, 'mcherry': 2, 'YFP': 1}
 BFTOOL_DIR = os.path.join(os.path.dirname(os.getcwd()), 'bftools/')
-# BFTOOL_DIR = r'C:\Users\littl\Documents\Research\pilus\bftools'
 skip_preprocess = False
 
 def Rename_Files():
@@ -50,8 +47,6 @@ def GetTiff():
                 input_dir = os.path.join(parent, f)
                 output_dir = os.path.join(os.path.join(parent.replace('_nd2', '_tiff'), f.replace('.nd2', '.tiff')))
                 # command = 'bfconvert ' + input_dir + ' ' + output_dir
-
-               
                 # subprocess.run(['./bfconvert', input_dir, output_dir], cwd = BFTOOL_DIR, shell = True)
                 # subprocess.Popen(['./bfconvert', input_dir, output_dir], cwd = BFTOOL_DIR, shell = True) # This is faster
                 subprocess.run([BFTOOL_DIR + 'bfconvert', input_dir, output_dir])

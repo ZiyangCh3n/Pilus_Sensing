@@ -8,6 +8,7 @@ import sys
 ARG = sys.argv
 DATA_DIR = os.path.join(os.path.dirname(os.getcwd()), 'data', ARG[1])
 T_START = time.asctime(time.localtime(time.time()))
+CHANNEL = {'phase': 0, 'mcherry': 2, 'YFP': 1}
 
 def SmoothByAvg(window_width, x, y):
     cumsum = np.cumsum(y)
@@ -142,7 +143,7 @@ if __name__ == '__main__':
                 raw_stack = io.imread(os.path.join(parent, f))
                 THRESH = []
                 for i in range(raw_stack.shape[0]):
-                    raw_img = raw_stack[i, ..., 2]
+                    raw_img = raw_stack[i, ..., CHANNEL['mcherry']]
                     rb_radius = 60
                     rb_radius = 30 + np.int(i * 30 / raw_stack.shape[0])
                     file_name = os.path.join(DATA_DIR, 'mask_ref', ('_'.join((os.path.splitext(f)[0], str(i).zfill(2))) + '.png'))
