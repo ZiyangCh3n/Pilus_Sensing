@@ -66,6 +66,8 @@ if __name__ == '__main__':
             for parent, dir, file in os.walk(MASK_DIR):
                 for f in file:
                     if f_img[:10] == f[:10]:
+                        if os.path.exists(os.path.join(DATA_DIR, 'YFP_ref', f)):
+                            continue
                         dir_mask = os.path.join(parent, f)
                         timepoint = int(f[11:13])
                         area, yfp, mcherry = CalcFluo(img_tiff[timepoint, ...], dir_mask, f, timepoint)
@@ -74,8 +76,9 @@ if __name__ == '__main__':
                         pd_dict['mCherry intensity total'].append(mcherry)
                         pd_dict['Time'].append(timepoint)
                         pd_dict['Label'].append(f_img)
-            df = pd.DataFrame(pd_dict, dtype = 'uint32')
-            df.to_csv(os.path.join(DATA_DIR, 'fluorescence.csv'), index=False, mode='a', header=not os.path.exists(os.path.join(DATA_DIR, 'fluorescence.csv')))
+            if len(pd_dict['Area']):
+                df = pd.DataFrame(pd_dict, dtype = 'uint32')
+                df.to_csv(os.path.join(DATA_DIR, 'fluorescence.csv'), index=False, mode='a', header=not os.path.exists(os.path.join(DATA_DIR, 'fluorescence.csv')))
     t1 = time.time()
     with open(os.path.join(DATA_DIR, 'log'), 'a') as log:
         log.write('-'*10 + 'Fluorescence' + '-'*10 + '\n')

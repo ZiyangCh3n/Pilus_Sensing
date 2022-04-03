@@ -30,8 +30,11 @@ def Rename_Files():
             for rep in np.arange(n_replicate)]
             print(rename_list)
             for f,r in zip(file, rename_list):
+                if os.path.exists(os.path.join(parent, r)):
+                    continue
                 os.rename(os.path.join(parent, f), os.path.join(parent, r))
-            os.rename(parent, parent + '_nd2')
+            if not('_nd2' in parent):    
+                os.rename(parent, parent + '_nd2')
             make_folder = parent + '_tiff'
             if not os.path.exists(make_folder):
                 os.makedirs(make_folder)
@@ -46,6 +49,8 @@ def GetTiff():
             for f ,i in zip(file, np.arange(len(file))):
                 input_dir = os.path.join(parent, f)
                 output_dir = os.path.join(os.path.join(parent.replace('_nd2', '_tiff'), f.replace('.nd2', '.tiff')))
+                if os.path.exists(output_dir):
+                    continue
                 # command = 'bfconvert ' + input_dir + ' ' + output_dir
                 # subprocess.run(['./bfconvert', input_dir, output_dir], cwd = BFTOOL_DIR, shell = True)
                 # subprocess.Popen(['./bfconvert', input_dir, output_dir], cwd = BFTOOL_DIR, shell = True) # This is faster
