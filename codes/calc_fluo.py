@@ -41,16 +41,17 @@ def GetMasked(img, mask, filename, channel, paras_rb = [100, 60]):
     plt.savefig(os.path.join(DATA_DIR, (channel + '_ref'), filename), bbox_inches = 'tight')
     # plt.show()
     plt.close()
-    return img_masked
+    return img_masked, bg_normal * mask
 
 
 def CalcFluo(img_tiff, dir_mask, filename, timepoint):
     # img_stack = io.imread(dir_img)
     # img_raw = img_stack[timepoint, ..., YFP]
     mask = np.bool_(io.imread(dir_mask)) * 1
-    yfp_masked = GetMasked(img_tiff, mask, filename, 'YFP')
-    mcherry_masked = GetMasked(img_tiff, mask, filename, 'mcherry')
-    return np.sum(mask, dtype = np.uint32), np.sum(yfp_masked, dtype = np.uint32), np.sum(mcherry_masked, dtype = np.uint32)
+    yfp_masked, yfp_bg = GetMasked(img_tiff, mask, filename, 'YFP')
+    mcherry_masked, mcherry_bg = GetMasked(img_tiff, mask, filename, 'mcherry')
+    returnval = np.sum([mask, yfp_masked, mcherry_masked, yfp_bg, mcherry_bg], axis = (1, 2), dtype = np.uint32)
+    return returnval
 
 if __name__ == '__main__':
     t0 = time.time()
@@ -62,18 +63,26 @@ if __name__ == '__main__':
         for f_img in file_img:
             dir_img = os.path.join(parent_img, f_img)
             img_tiff = io.imread(dir_img)
-            pd_dict = {'Label': [], 'Area': [], 'YFP intensity total': [], 'mCherry intensity total': [], 'Time': []}
+            pd_dict = {'Label': [], 
+            'Area': [], 
+            'YFP intensity total': [], 
+            'YFP background': [],
+            'mCherry intensity total': [],
+            'mCherry background': [], 
+            'Time': []}
             for parent, dir, file in os.walk(MASK_DIR):
                 for f in file:
                     if f_img[:10] == f[:10]:
-                        if os.path.exists(os.path.join(DATA_DIR, 'YFP_ref', f)):
-                            continue
+                        # if os.path.exists(os.path.join(DATA_DIR, 'YFP_ref', f)):
+                            # continue
                         dir_mask = os.path.join(parent, f)
                         timepoint = int(f[11:13])
-                        area, yfp, mcherry = CalcFluo(img_tiff[timepoint, ...], dir_mask, f, timepoint)
-                        pd_dict['Area'].append(area)
-                        pd_dict['YFP intensity total'].append(yfp)
-                        pd_dict['mCherry intensity total'].append(mcherry)
+                        vals = CalcFluo(img_tiff[timepoint, ...], dir_mask, f, timepoint)
+                        pd_dict['Area'].append(vals[0])
+                        pd_dict['YFP intensity total'].append(vals[1])
+                        pd_dict['YFP background'].append(vals[2])
+                        pd_dict['mCherry intensity total'].append(vals[3])
+                        pd_dict['mCherry background'].append(vals[4])
                         pd_dict['Time'].append(timepoint)
                         pd_dict['Label'].append(f_img)
             if len(pd_dict['Area']):
