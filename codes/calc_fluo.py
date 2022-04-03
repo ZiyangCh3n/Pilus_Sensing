@@ -12,7 +12,7 @@ MASK_DIR = os.path.join(DATA_DIR, 'mask')
 IMG_DIR = os.path.join(DATA_DIR, [folder for folder in os.listdir(DATA_DIR) if folder.endswith('tiff')][0])
 T_START = time.asctime(time.localtime(time.time()))
 
-def GetMasked(img, mask, filename, channel, paras_rb = [150, 60]):
+def GetMasked(img, mask, filename, channel, paras_rb = [100, 60]):
     img_raw = img[..., CHANNEL[channel]]
     bg = restoration.rolling_ball(img_raw, radius = paras_rb[0])
     bg_normal = util.img_as_uint(filters.rank.mean(util.img_as_uint(bg.astype(int)), selem = morphology.disk(paras_rb[1])))
@@ -32,7 +32,7 @@ def GetMasked(img, mask, filename, channel, paras_rb = [150, 60]):
     ax[1, 0].set_title('Masked')
     ax[1, 1].imshow(bg_normal, cmap = 'gray')
     ax[1, 1].set_title('Background') 
-    ax[1, 2].hist(np.array(x).T, 200, density = True, histtype = 'step', stacked = True, fill = False, label = ['raw', 'bg', 'bg_reduced'])
+    ax[1, 2].hist(np.array(x).T, 200, density = True, histtype = 'step', stacked = False, fill = False, label = ['raw', 'bg', 'bg_reduced'])
     ax[1, 2].legend(loc = 'upper left')
     ax[1, 2].set_title('Hitogram - gray value')
     for a in ax.ravel()[:-1]:
@@ -50,7 +50,7 @@ def CalcFluo(img_tiff, dir_mask, filename, timepoint):
     mask = np.bool_(io.imread(dir_mask)) * 1
     yfp_masked = GetMasked(img_tiff, mask, filename, 'YFP')
     mcherry_masked = GetMasked(img_tiff, mask, filename, 'mcherry')
-    return np.sum(mask), np.sum(yfp_masked), np.sum(mcherry_masked)
+    return np.sum(mask, dtype = np.uint32), np.sum(yfp_masked, dtype = np.uint32), np.sum(mcherry_masked, dtype = np.uint32)
 
 if __name__ == '__main__':
     t0 = time.time()
@@ -74,7 +74,7 @@ if __name__ == '__main__':
                         pd_dict['mCherry intensity total'].append(mcherry)
                         pd_dict['Time'].append(timepoint)
                         pd_dict['Label'].append(f_img)
-            df = pd.DataFrame(pd_dict)
+            df = pd.DataFrame(pd_dict, dtype = 'uint32')
             df.to_csv(os.path.join(DATA_DIR, 'fluorescence.csv'), index=False, mode='a', header=not os.path.exists(os.path.join(DATA_DIR, 'fluorescence.csv')))
     t1 = time.time()
     with open(os.path.join(DATA_DIR, 'log'), 'a') as log:
