@@ -73,8 +73,8 @@ if __name__ == '__main__':
             for parent, dir, file in os.walk(MASK_DIR):
                 for f in file:
                     if f_img[:10] == f[:10]:
-                        # if os.path.exists(os.path.join(DATA_DIR, 'YFP_ref', f)):
-                            # continue
+                        if os.path.exists(os.path.join(DATA_DIR, 'YFP_ref', f)):
+                            continue
                         dir_mask = os.path.join(parent, f)
                         timepoint = int(f[11:13])
                         vals = CalcFluo(img_tiff[timepoint, ...], dir_mask, f, timepoint)
