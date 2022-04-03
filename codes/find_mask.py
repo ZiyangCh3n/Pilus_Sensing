@@ -145,11 +145,11 @@ if __name__ == '__main__':
                 for i in range(raw_stack.shape[0]):
                     raw_img = raw_stack[i, ..., CHANNEL['mcherry']]
                     # rb_radius = 60
-                    rb_radius = 30 + np.int(i * 30 / raw_stack.shape[0])
+                    rb_radius = 100 + np.int(i * 50 / raw_stack.shape[0])
                     file_name = os.path.join(DATA_DIR, 'mask_ref', ('_'.join((os.path.splitext(f)[0], str(i).zfill(2))) + '.png'))
                     if os.path.exists(file_name):
                         continue
-                    mask = FindMask(file_name, raw_img, 6, [10, 2], [rb_radius, 60], .8, 2)
+                    mask = FindMask(file_name, raw_img, 6, [10, 2], [rb_radius, int(1.5 * rb_radius)], .9, 2)
                     # np.save(file_name.replace('mask_ref', 'mask', 1).replace('.png', '.npy', 1), np.bool_(mask))
                     io.imsave(file_name.replace('mask_ref', 'mask', 1), mask)
                     # np.savetxt(file_name.replace('mask_ref', 'mask', 1).replace('.png', '.csv', 1), mask, delimiter = ',')

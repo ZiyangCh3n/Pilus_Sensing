@@ -12,7 +12,7 @@ MASK_DIR = os.path.join(DATA_DIR, 'mask')
 IMG_DIR = os.path.join(DATA_DIR, [folder for folder in os.listdir(DATA_DIR) if folder.endswith('tiff')][0])
 T_START = time.asctime(time.localtime(time.time()))
 
-def GetMasked(img, mask, filename, channel, paras_rb = [100, 60]):
+def GetMasked(img, mask, filename, channel, paras_rb = [150, 225]):
     img_raw = img[..., CHANNEL[channel]]
     bg = restoration.rolling_ball(img_raw, radius = paras_rb[0])
     bg_normal = util.img_as_uint(filters.rank.mean(util.img_as_uint(bg.astype(int)), selem = morphology.disk(paras_rb[1])))
