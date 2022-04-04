@@ -56,7 +56,7 @@ def FindMin(hist, bins, thresholds, window_width = 10, flat = 1):
     # bin_min = moving_bins[min_inds]
     # return moving_diff_min, np.int32(bin_min)
 
-def FindMask(file_name, img_raw, paras_close, paras_sharp, paras_rb, paras_hys, paras_hat, paras_hist = [1025, 10]):
+def FindMask(file_name, img_raw, paras_close, paras_sharp, paras_rb, paras_hys, paras_hat, paras_hist = [513, 10], flat = 10):
     img_filled = morphology.closing(img_raw, morphology.disk(paras_close))
     # img_filled = morphology.diameter_closing(img_raw, diameter_threshold = 6)
     # img_filled = morphology.opening(img_filled, morphology.disk(1))
@@ -75,7 +75,7 @@ def FindMask(file_name, img_raw, paras_close, paras_sharp, paras_rb, paras_hys, 
     # inds = [np.where(bins > thr)[0][0] for thr in thresholds]
     # diff = np.abs(hist[[i + paras_hist[1] for i in inds]] - hist[[i - paras_hist[1] for i in inds]])
     diff, thresh_min, thresh_m = FindMin(hist, bins, thresholds)
-    thresh = thresh_min[np.argmin(diff)]
+    thresh = thresh_min[np.argmin([i // flat * flat for i in diff])]
     # thresh = thresholds[np.argmin(diff)]
     if len(THRESH):
         if np.abs(thresh - THRESH[-1]) > 0.3 * THRESH[-1]:
