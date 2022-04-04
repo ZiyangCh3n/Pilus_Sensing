@@ -63,8 +63,8 @@ if __name__ == '__main__':
         for parent, dir, file in os.walk(DATA_DIR):
             if not len(dir):
                 data_dir = os.path.dirname(parent)
-                Rename_Files()
-                GetTiff()
+                Rename_Files(data_dir)
+                GetTiff(data_dir)
     t1 = time.time()
     with open(os.path.join(DATA_DIR, 'log'), 'a') as log:
         log.write('-' * 10 + 'CONVERSION' + '-' * 10 + '\n')
