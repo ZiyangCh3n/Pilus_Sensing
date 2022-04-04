@@ -15,13 +15,13 @@ CHANNEL = {'phase': 0, 'mcherry': 2, 'YFP': 1}
 BFTOOL_DIR = os.path.join(os.path.dirname(os.getcwd()), 'bftools/')
 skip_preprocess = False
 
-def Rename_Files():
+def Rename_Files(data_dir):
     ref = {}
-    for line in open(os.path.join(DATA_DIR, 'ref.txt')):
+    for line in open(os.path.join(data_dir, 'ref.txt')):
         a = line.strip().split(',')
         ref[a[0]] = a[1:]
 
-    for parent, dir, file in os.walk(DATA_DIR):
+    for parent, dir, file in os.walk(data_dir):
         if not len(dir):
             n_replicate = int(len(file) / len(ref['conc']))
             rename_list = ['_'.join([strain, str(float(conc)), str(rep).zfill(2)]) + '.nd2' 
@@ -39,10 +39,10 @@ def Rename_Files():
             if not os.path.exists(make_folder):
                 os.makedirs(make_folder)
 
-def GetTiff():
+def GetTiff(data_dir):
     # subprocess.run(['chmod', '+x', './bfconvert'], cwd = BFTOOL_DIR, shell = True)
     # subprocess.run([BFTOOL_DIR, 'chmod', '+x', './bfconvert'])
-    for parent, dir, file in os.walk(DATA_DIR):
+    for parent, dir, file in os.walk(data_dir):
         file = [f for f in file if f.endswith('.nd2')] 
         if len(file):
             print(file)
@@ -60,9 +60,11 @@ def GetTiff():
 if __name__ == '__main__':
     t0 = time.time()
     if not skip_preprocess:
-        Rename_Files()
-        GetTiff()
-    time.sleep(5)
+        for parent, dir, file in os.walk(DATA_DIR):
+            if not len(dir):
+                data_dir = os.path.dirname(parent)
+                Rename_Files()
+                GetTiff()
     t1 = time.time()
     with open(os.path.join(DATA_DIR, 'log'), 'a') as log:
         log.write('-' * 10 + 'CONVERSION' + '-' * 10 + '\n')
