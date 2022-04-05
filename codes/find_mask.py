@@ -36,6 +36,7 @@ def FindMin(hist, bins, thresholds, window_width = 10, flat = 1, ub = 4000, bb =
     rb = [idx + width_half if idx + width_half < len(bins_sss) -1 else len(bins_sss) -1 for idx in inds]
     diff_ss_min = [np.min(diff_ss[a:b]) for a, b in zip(lb, rb)]
     bins_sss_min = bins_sss[np.sum([[np.argmin(diff_ss[a:b]) for a, b in zip(lb, rb)], lb], axis = 0)]
+    area_exposed = list(map(lambda x: np.sum(hist[bins[:-1] >= x]), bins_sss_min))
     # plt.title(thresh_m)
     # plt.plot(bins_sss, diff_ss)
     # for bin, dif in zip(bins_sss_min, diff_ss_min):
@@ -43,10 +44,10 @@ def FindMin(hist, bins, thresholds, window_width = 10, flat = 1, ub = 4000, bb =
     #     plt.legend()
     # plt.show()
     # plt.close()
-    return diff_ss_min, bins_sss_min, thresh_m
+    return diff_ss_min, bins_sss_min, thresh_m, area_exposed
 
 
-def FindMask(file_name, img_raw, paras_close, paras_sharp, paras_rb, paras_hys, paras_hat, paras_hist = [513, 10], flat = 10, jump = 400):
+def FindMask(file_name, img_raw, paras_close, paras_sharp, paras_rb, paras_hys, paras_hat, paras_hist = [513, 10], flat = 10, jump = 400, jump_a = .35):
     img_filled = morphology.closing(img_raw, morphology.disk(paras_close))
     # img_filled = morphology.diameter_closing(img_raw, diameter_threshold = 6)
     # img_filled = morphology.opening(img_filled, morphology.disk(1))
@@ -64,18 +65,52 @@ def FindMask(file_name, img_raw, paras_close, paras_sharp, paras_rb, paras_hys, 
     hist, bins = np.histogram(img_bg_reduced.ravel(), bins=paras_hist[0])
     # inds = [np.where(bins > thr)[0][0] for thr in thresholds]
     # diff = np.abs(hist[[i + paras_hist[1] for i in inds]] - hist[[i - paras_hist[1] for i in inds]])
-    diff, thresh_min, thresh_m = FindMin(hist, bins, thresholds)
-    thresh = thresh_min[np.argmin([i // flat * flat for i in diff])]
+    diff, thresh_min, thresh_m, area_exposed = FindMin(hist, bins, thresholds)
+    idx = np.argmin([i // flat * flat for i in diff])
+    thresh = thresh_min[idx]
+    area = area_exposed[idx]
     # thresh = thresholds[np.argmin(diff)]
-    if len(THRESH):
-        if np.abs(thresh - THRESH[-1]) > jump:
-            thresh_min_f = [thr for thr in thresh_min if np.abs(thr - THRESH[-1]) <= jump]
-            if len(thresh_min_f):
-                idx = np.argmin(np.abs(thresh_min_f - THRESH[-1]))
-                thresh = thresh_min_f[idx]
+    # thresh_min_f0, thresh_min_f = [thresh], [thresh]
+    if len(AREA + THRESH):
+        if (area - AREA[-1]) > jump_a * AREA[-1] or np.abs(thresh - THRESH[-1]) > jump:
+            inds_area = [idx for idx in range(len(area_exposed)) if 0 < (area_exposed[idx] - AREA[-1]) <= jump_a * AREA[-1]]
+            inds_thr = [idx for idx in range(len(thresh_min)) if np.abs(thresh_min[idx] - THRESH[-1]) <= jump]
+            u_inds = list(set(inds_area).union(set(inds_thr)))
+            # thresh_min_f0 = [thresh_min[i] for i in range(len(area_exposed)) if  0 < (area_exposed[i] - AREA[-1]) <= jump_a * AREA[-1]]
+            # area_f0 = [area for area in area_exposed if  0 < (area - AREA[-1]) <= jump_a * AREA[-1]]
+            # thresh_min_f = [thr for thr in thresh_min if np.abs(thr - THRESH[-1]) <= jump]
+            # area_f = [area_exposed[i] for i in range(len(thresh_min)) if np.abs(thresh_min[i] - THRESH[-1]) <= jump]
+            # u_thr = list(set(thresh_min_f0).union(thresh_min_f))
+            if len(u_inds):
+                idx_thr = u_inds[np.argmin(np.abs(thresh_min[u_inds] - THRESH[-1]))]
+                thresh = thresh_min[idx_thr]
+                area = area_exposed[idx_thr]
             else:
                 thresh = THRESH[-1]
+                area = AREA[-1]
+    # if len(AREA):
+    #     if (area - AREA[-1]) > jump_a * AREA[-1]:
+    #         thresh_min_f0 = [thresh_min[i] for i in range(len(thresh_min)) if  0 < (area - AREA[-1]) <= jump_a * AREA[-1]]
+                
+    # if len(THRESH):
+    #     if np.abs(thresh - THRESH[-1]) > jump:
+    #         thresh_min_f = [thr for thr in thresh_min if np.abs(thr - THRESH[-1]) <= jump]
+            # if len(thresh_min_f):
+            #     idx = np.argmin(np.abs(thresh_min_f - THRESH[-1]))
+            #     thresh = thresh_min_f[idx]
+            # else:
+            #     thresh = THRESH[-1]
+    # if len(AREA + THRESH):
+    #     u = list(set(thresh_min_f0).union(thresh_min_f))
+    #     if len(u):
+    #         idx_thr = np.argmin(np.abs(u - THRESH[-1]))
+    #         thresh = u[idx_thr]
+    #     else:
+    #         thresh = THRESH[-1]
+    #         area = AREA[-1]
     THRESH.append(thresh)
+    AREA.append(area)
+    
     low = thresh * paras_hys
     high = thresh
     img_hyst = filters.apply_hysteresis_threshold(img_bg_reduced, low, high)
@@ -135,13 +170,14 @@ if __name__ == '__main__':
                     for f in file:
                         raw_stack = io.imread(os.path.join(parent, f))
                         THRESH = []
+                        AREA = []
                         for i in range(raw_stack.shape[0]):
                             raw_img = raw_stack[i, ..., CHANNEL['mcherry']]
                             # rb_radius = 60
                             rb_radius = 100 + np.int(i * 50 / raw_stack.shape[0])
                             file_name = os.path.join(data_dir, 'mask_ref', ('_'.join((os.path.splitext(f)[0], str(i).zfill(2))) + '.png'))
-                            if os.path.exists(file_name):
-                                continue
+                            # if os.path.exists(file_name):
+                            #     continue
                             mask = FindMask(file_name, raw_img, 6, [10, 2], [rb_radius, int(1.5 * rb_radius)], .9, 2)
                             # np.save(file_name.replace('mask_ref', 'mask', 1).replace('.png', '.npy', 1), np.bool_(mask))
                             io.imsave(file_name.replace('mask_ref', 'mask', 1), mask)
