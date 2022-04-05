@@ -12,7 +12,7 @@ ARGS = sys.argv
 DATA_DIR = os.path.join(os.path.dirname(os.getcwd()), 'data', ARGS[1])
 T_START = time.asctime(time.localtime(time.time()))
 CHANNEL = {'phase': 0, 'mcherry': 2, 'YFP': 1}
-BFTOOL_DIR = os.path.join(os.path.dirname(os.getcwd()), 'bftools/')
+BFTOOL_DIR = os.path.join(os.path.dirname(os.getcwd()), 'bftools')
 skip_preprocess = False
 
 def Rename_Files(data_dir):
@@ -33,8 +33,8 @@ def Rename_Files(data_dir):
                 if os.path.exists(os.path.join(parent, r)):
                     continue
                 os.rename(os.path.join(parent, f), os.path.join(parent, r))
-            if not('_nd2' in parent):    
-                os.rename(parent, parent + '_nd2')
+            # if not('_nd2' in parent):    
+            #     os.rename(parent, parent + '_nd2')
             make_folder = parent + '_tiff'
             if not os.path.exists(make_folder):
                 os.makedirs(make_folder)
@@ -54,7 +54,7 @@ def GetTiff(data_dir):
                 # command = 'bfconvert ' + input_dir + ' ' + output_dir
                 # subprocess.run(['./bfconvert', input_dir, output_dir], cwd = BFTOOL_DIR, shell = True)
                 # subprocess.Popen(['./bfconvert', input_dir, output_dir], cwd = BFTOOL_DIR, shell = True) # This is faster
-                subprocess.run([BFTOOL_DIR + 'bfconvert', input_dir, output_dir])
+                subprocess.run([os.path.join(BFTOOL_DIR, 'bfconvert'), input_dir, output_dir])
                 # print(f'{i + 1} out of {len(file)} convertion finished.')
 
 if __name__ == '__main__':
