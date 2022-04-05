@@ -17,7 +17,7 @@ def SmoothByAvg(window_width, x, y):
     moving_bins = x[half_width:-half_width]
     return moving_bins, moving_avg
 
-def FindMin(hist, bins, thresholds, window_width = 10, flat = 1):
+def FindMin(hist, bins, thresholds, window_width = 10, flat = 1, , ub = 4000, bb = 600):
     hist = hist[1:]
     bins = bins[1:]
     width_half = int(window_width / 2)
@@ -28,6 +28,9 @@ def FindMin(hist, bins, thresholds, window_width = 10, flat = 1):
     diff_ss = np.int16(np.abs(diff_ss) / flat) * flat
     thresh_m = bins_sss[np.argmin(diff_ss)]
     thresholds = np.sort(np.append(thresholds, thresh_m))
+    thresholds = [thr for thr in thresholds if bb < thr < ub]
+    if not len(thresholds):
+        thresholds = [1000, 2000, 3000, 4000]
     inds = [np.where(bins_sss > thr)[0][0] for thr in thresholds]
     lb = [idx - width_half if idx > width_half else 0 for idx in inds]
     rb = [idx + width_half if idx + width_half < len(bins_sss) -1 else len(bins_sss) -1 for idx in inds]
@@ -42,21 +45,8 @@ def FindMin(hist, bins, thresholds, window_width = 10, flat = 1):
     # plt.close()
     return diff_ss_min, bins_sss_min, thresh_m
 
-    # cumsum = np.cumsum(hist)
-    # half_width = int(window_width / 2)
-    # moving_average = (cumsum[window_width:] - cumsum[:-window_width]) / window_width
-    # moving_bins = bins[half_width : -half_width]
-    # inds = [np.where(moving_bins > thr)[0][0] for thr in thresholds]
-    # lb = [idx - half_width if idx > half_width else 0 for idx in inds]
-    # rb = [idx + half_width if idx + half_width < len(moving_bins) -1 else len(moving_bins) -1 for idx in inds]
-    # moving_diff = np.abs(np.diff(moving_average, 1))
-    # moving_diff_min = np.int32([np.min(moving_diff[a:b]) / 10 for a, b in zip(lb, rb)])
-    # min_inds_relative = [np.argmin(moving_diff[a:b]) for a, b in zip(lb, rb)]
-    # min_inds = np.sum([min_inds_relative, lb], axis = 0)
-    # bin_min = moving_bins[min_inds]
-    # return moving_diff_min, np.int32(bin_min)
 
-def FindMask(file_name, img_raw, paras_close, paras_sharp, paras_rb, paras_hys, paras_hat, paras_hist = [513, 10], flat = 10):
+def FindMask(file_name, img_raw, paras_close, paras_sharp, paras_rb, paras_hys, paras_hat, paras_hist = [513, 10], flat = 10, jump = 400):
     img_filled = morphology.closing(img_raw, morphology.disk(paras_close))
     # img_filled = morphology.diameter_closing(img_raw, diameter_threshold = 6)
     # img_filled = morphology.opening(img_filled, morphology.disk(1))
@@ -78,8 +68,8 @@ def FindMask(file_name, img_raw, paras_close, paras_sharp, paras_rb, paras_hys, 
     thresh = thresh_min[np.argmin([i // flat * flat for i in diff])]
     # thresh = thresholds[np.argmin(diff)]
     if len(THRESH):
-        if np.abs(thresh - THRESH[-1]) > 0.3 * THRESH[-1]:
-            thresh_min_f = [thr for thr in thresh_min if np.abs(thr - THRESH[-1]) <= 0.3 * THRESH[-1]]
+        if np.abs(thresh - THRESH[-1]) > jump:
+            thresh_min_f = [thr for thr in thresh_min if np.abs(thr - THRESH[-1]) <= jump]
             if len(thresh_min_f):
                 idx = np.argmin(np.abs(thresh_min_f - THRESH[-1]))
                 thresh = thresh_min_f[idx]
