@@ -17,7 +17,7 @@ def SmoothByAvg(window_width, x, y):
     moving_bins = x[half_width:-half_width]
     return moving_bins, moving_avg
 
-def FindMin(hist, bins, thresholds, window_width = 10, flat = 1, , ub = 4000, bb = 600):
+def FindMin(hist, bins, thresholds, window_width = 10, flat = 1, ub = 4000, bb = 600):
     hist = hist[1:]
     bins = bins[1:]
     width_half = int(window_width / 2)
@@ -123,32 +123,35 @@ def FindMask(file_name, img_raw, paras_close, paras_sharp, paras_rb, paras_hys, 
 
 if __name__ == '__main__':
     t0 = time.time()
-    if not os.path.exists(os.path.join(DATA_DIR, 'mask_ref')):
-        os.mkdir(os.path.join(DATA_DIR, 'mask_ref'))
-    if not os.path.exists(os.path.join(DATA_DIR, 'mask')):
-        os.mkdir(os.path.join(DATA_DIR, 'mask'))
-    for parent, dir, file in os.walk(DATA_DIR):
-        if( 'tiff' in parent):
-            for f in file:
-                raw_stack = io.imread(os.path.join(parent, f))
-                THRESH = []
-                for i in range(raw_stack.shape[0]):
-                    raw_img = raw_stack[i, ..., CHANNEL['mcherry']]
-                    # rb_radius = 60
-                    rb_radius = 100 + np.int(i * 50 / raw_stack.shape[0])
-                    file_name = os.path.join(DATA_DIR, 'mask_ref', ('_'.join((os.path.splitext(f)[0], str(i).zfill(2))) + '.png'))
-                    if os.path.exists(file_name):
-                        continue
-                    mask = FindMask(file_name, raw_img, 6, [10, 2], [rb_radius, int(1.5 * rb_radius)], .9, 2)
-                    # np.save(file_name.replace('mask_ref', 'mask', 1).replace('.png', '.npy', 1), np.bool_(mask))
-                    io.imsave(file_name.replace('mask_ref', 'mask', 1), mask)
-                    # np.savetxt(file_name.replace('mask_ref', 'mask', 1).replace('.png', '.csv', 1), mask, delimiter = ',')
-    t1 = time.time()
-    with open(os.path.join(DATA_DIR, 'log'), 'a') as log:
-        log = open(os.path.join(DATA_DIR, 'log'), 'a')
-        log.write('-'*10 + 'Masking' + '-'*10 + '\n')
-        log.write('Started at: ' + T_START + '\n')
-        log.write('DATA_DIR: ' + DATA_DIR + '\n')
-        log.write('Total time in min: ' + str(round((t1 - t0) / 60, 2)) + '\n')
+    for parent_m, folder_m, file_m in os.walk(DATA_DIR):
+        if 'ref.txt' in file_m:
+            data_dir = parent_m
+            if not os.path.exists(os.path.join(data_dir, 'mask_ref')):
+                os.mkdir(os.path.join(data_dir, 'mask_ref'))
+            if not os.path.exists(os.path.join(data_dir, 'mask')):
+                os.mkdir(os.path.join(data_dir, 'mask'))
+            for parent, dir, file in os.walk(data_dir):
+                if( 'tiff' in parent):
+                    for f in file:
+                        raw_stack = io.imread(os.path.join(parent, f))
+                        THRESH = []
+                        for i in range(raw_stack.shape[0]):
+                            raw_img = raw_stack[i, ..., CHANNEL['mcherry']]
+                            # rb_radius = 60
+                            rb_radius = 100 + np.int(i * 50 / raw_stack.shape[0])
+                            file_name = os.path.join(data_dir, 'mask_ref', ('_'.join((os.path.splitext(f)[0], str(i).zfill(2))) + '.png'))
+                            if os.path.exists(file_name):
+                                continue
+                            mask = FindMask(file_name, raw_img, 6, [10, 2], [rb_radius, int(1.5 * rb_radius)], .9, 2)
+                            # np.save(file_name.replace('mask_ref', 'mask', 1).replace('.png', '.npy', 1), np.bool_(mask))
+                            io.imsave(file_name.replace('mask_ref', 'mask', 1), mask)
+                            # np.savetxt(file_name.replace('mask_ref', 'mask', 1).replace('.png', '.csv', 1), mask, delimiter = ',')
+            t1 = time.time()
+            with open(os.path.join(data_dir, 'log'), 'a') as log:
+                log = open(os.path.join(data_dir, 'log'), 'a')
+                log.write('-'*10 + 'Masking' + '-'*10 + '\n')
+                log.write('Started at: ' + T_START + '\n')
+                log.write('DATA_DIR: ' + data_dir + '\n')
+                log.write('Total time in min: ' + str(round((t1 - t0) / 60, 2)) + '\n')
     # log.close()
     # print("DONE")
