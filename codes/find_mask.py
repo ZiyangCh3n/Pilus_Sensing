@@ -9,6 +9,21 @@ ARG = sys.argv
 DATA_DIR = os.path.join(os.path.dirname(os.getcwd()), 'data', ARG[1])
 T_START = time.asctime(time.localtime(time.time()))
 CHANNEL = {'phase': 0, 'mcherry': 2, 'YFP': 1}
+PARAS_MASK = {'close_radius': 6, # the radius for the closing step
+              'sharp_radius': 10, # the radius for the sharp step
+              'sharp_amount': 2, # the amount fo r the sharp step
+              'rolling_ball_radius': 100, # the radius for the rolling ball step
+              'gaussian_blur_radius': 150, # the radius for the gaussian blur
+              'hysteresis_tolerance': .9, # the tolerance for hysteresis 
+              'tophat_radius': 2, # the radius for the white tophat
+              'histogram_nbin': 513, # number of bins for histogram
+              'flat': 10, # this would make diff less than 10 as 0
+              'jump_thr': 400, # the step allowed for threshold abosulute value jump
+              'jump_area': .35} # the step allowed for area proportion jump
+PARAS_MIN = {'window_width': 10, # the window width for moving average
+             'flat': 1, # this would make diff 0 as 0
+             'upper_bound': 4000, # the upper bound for threshold value
+             'lower_bound': 600} # the lower bound for threshold value
 
 def SmoothByAvg(window_width, x, y):
     cumsum = np.cumsum(y)
@@ -17,7 +32,7 @@ def SmoothByAvg(window_width, x, y):
     moving_bins = x[half_width:-half_width]
     return moving_bins, moving_avg
 
-def FindMin(hist, bins, thresholds, window_width = 10, flat = 1, ub = 4000, bb = 600):
+def FindMin(hist, bins, thresholds, window_width = PARAS_MIN['window_width'], flat = PARAS_MIN['flat'], ub = PARAS_MIN['upper_bound'], bb = PARAS_MIN['lower_bound']):
     hist = hist[1:]
     bins = bins[1:]
     width_half = int(window_width / 2)
@@ -47,7 +62,12 @@ def FindMin(hist, bins, thresholds, window_width = 10, flat = 1, ub = 4000, bb =
     return diff_ss_min, bins_sss_min, thresh_m, area_exposed
 
 
-def FindMask(file_name, img_raw, paras_close, paras_sharp, paras_rb, paras_hys, paras_hat, paras_hist = [513, 10], flat = 10, jump = 400, jump_a = .35):
+def FindMask(file_name, img_raw, paras_close = PARAS_MASK['close_radius'], 
+             paras_sharp = [PARAS_MASK['sharp_radius'], PARAS_MASK['sharp_amount']], 
+             paras_rb = PARAS_MASK['rolling_ball_radius'], paras_hys = PARAS_MASK['hysteresis_tolerance'], 
+             paras_hat = PARAS_MASK['tophat_radius'], paras_hist = PARAS_MASK['histogram_nbin'], flat = PARAS_MASK['flat'],
+             jump = PARAS_MASK['jump_thr'], jump_a = PARAS_MASK['jump_area']):
+    
     img_filled = morphology.closing(img_raw, morphology.disk(paras_close))
     # img_filled = morphology.diameter_closing(img_raw, diameter_threshold = 6)
     # img_filled = morphology.opening(img_filled, morphology.disk(1))
@@ -62,7 +82,7 @@ def FindMask(file_name, img_raw, paras_close, paras_sharp, paras_rb, paras_hys, 
     img_bg_reduced[img_sharp < bg_normal] = 0
     thresholds = filters.threshold_multiotsu(img_bg_reduced, classes = 4)
     img_otsu = np.digitize(img_bg_reduced, bins = thresholds)
-    hist, bins = np.histogram(img_bg_reduced.ravel(), bins=paras_hist[0])
+    hist, bins = np.histogram(img_bg_reduced.ravel(), bins=paras_hist)
     # inds = [np.where(bins > thr)[0][0] for thr in thresholds]
     # diff = np.abs(hist[[i + paras_hist[1] for i in inds]] - hist[[i - paras_hist[1] for i in inds]])
     diff, thresh_min, thresh_m, area_exposed = FindMin(hist, bins, thresholds)
@@ -131,7 +151,7 @@ def FindMask(file_name, img_raw, paras_close, paras_sharp, paras_rb, paras_hys, 
     ax[1, 1].set_title('Hysteresis')
     ax[1, 2].imshow(img_res, cmap = 'gray')
     ax[1, 2].set_title('Tophat')
-    ax[2, 0].hist(img_bg_reduced.ravel(), bins = paras_hist[0])
+    ax[2, 0].hist(img_bg_reduced.ravel(), bins = paras_hist)
     for thr, dif in zip(thresh_min, diff):
         if thr == thresh:
             if thr != thresh_m:
@@ -178,7 +198,7 @@ if __name__ == '__main__':
                             file_name = os.path.join(data_dir, 'mask_ref', ('_'.join((os.path.splitext(f)[0], str(i).zfill(2))) + '.png'))
                             if os.path.exists(file_name):
                                 continue
-                            mask = FindMask(file_name, raw_img, 6, [10, 2], [rb_radius, int(1.5 * rb_radius)], .9, 2)
+                            mask = FindMask(file_name, raw_img, paras_rb = [rb_radius, int(1.5 * rb_radius)])
                             # np.save(file_name.replace('mask_ref', 'mask', 1).replace('.png', '.npy', 1), np.bool_(mask))
                             io.imsave(file_name.replace('mask_ref', 'mask', 1), mask)
                             # np.savetxt(file_name.replace('mask_ref', 'mask', 1).replace('.png', '.csv', 1), mask, delimiter = ',')
