@@ -11,7 +11,7 @@
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
-            "args": ["test"],
+            "args": ["040222", "4", "2"],
             "justMyCode": true
         }
     ]

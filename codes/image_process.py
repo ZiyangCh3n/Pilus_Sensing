@@ -58,19 +58,21 @@ def GetTiff(data_dir):
                 # print(f'{i + 1} out of {len(file)} convertion finished.')
 
 if __name__ == '__main__':
-    t0 = time.time()
     if not skip_preprocess:
         for parent, dir, file in walk(DATA_DIR):
-            if not len(dir):
+            if not (len(dir) or 'tiff' in parent):
+                t0 = time.time()
                 data_dir = path.dirname(parent)
                 Rename_Files(data_dir)
                 GetTiff(data_dir)
-    t1 = time.time()
-    with open(path.join(DATA_DIR, 'log'), 'a') as log:
-        log.write('-' * 10 + 'CONVERSION' + '-' * 10 + '\n')
-        log.write('Created at: ' + T_START + '\n')
-        log.write('DATA_DIR: ' + DATA_DIR + '\n')
-        log.write('Total time in min: ' + str(round((t1 - t0) /60, 2)) + '\n')
+                t1 = time.time()
+                with open(path.join(data_dir, 'log'), 'a') as log:
+                    log.write('-' * 10 + 'CONVERSION' + '-' * 10 + '\n')
+                    log.write('Created at: ' + T_START + '\n')
+                    log.write('DATA_DIR: ' + data_dir + '\n')
+                    log.write('Total time in min: ' + str(round((t1 - t0) /60, 2)) + '\n')
+                
+
     # log.close()  
 
     # dir_list = {}

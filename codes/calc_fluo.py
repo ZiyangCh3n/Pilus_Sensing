@@ -9,9 +9,12 @@ import pandas as pd
 ARG = sys.argv
 CHANNEL = {'phase': 0, 'mcherry': 2, 'YFP': 1}
 DATA_DIR = path.join(path.dirname(getcwd()), 'data', ARG[1])
-MASK_DIR = path.join(DATA_DIR, 'mask')
-IMG_DIR = path.join(DATA_DIR, [folder for folder in listdir(DATA_DIR) if folder.endswith('tiff')][0])
 T_START = time.asctime(time.localtime(time.time()))
+START = int(ARG[2])
+if not int(ARG[3]): # set to 0 to run through all files
+    ARG[3] = 10000
+STOP = int(ARG[2]) + int(ARG[3]) - 1
+
 
 def GetMasked(img, mask, filename, channel, paras_rb = [150, 225]):
     img_raw = img[..., CHANNEL[channel]]
@@ -39,12 +42,12 @@ def GetMasked(img, mask, filename, channel, paras_rb = [150, 225]):
     for a in ax.ravel()[:-1]:
         a.axis('off')
     plt.tight_layout()
-    plt.savefig(path.join(DATA_DIR, (channel + '_ref'), filename), bbox_inches = 'tight')
+    plt.savefig(path.join(data_dir, (channel + '_ref'), filename), bbox_inches = 'tight')
     # plt.show()
     plt.close()
     return img_masked, bg_normal * mask
 
-@profile
+# @profile
 def CalcFluo(img_tiff, dir_mask, filename, timepoint):
     # img_stack = io.imread(dir_img)
     # img_raw = img_stack[timepoint, ..., YFP]
@@ -55,44 +58,57 @@ def CalcFluo(img_tiff, dir_mask, filename, timepoint):
     return returnval
 
 if __name__ == '__main__':
-    t0 = time.time()
-    if not path.exists(path.join(DATA_DIR, 'YFP_ref')):
-        mkdir(path.join(DATA_DIR, 'YFP_ref'))
-    if not path.exists(path.join(DATA_DIR, 'mcherry_ref')):
-        mkdir(path.join(DATA_DIR, 'mcherry_ref'))
-    for parent_img, dir_img, file_img in walk(IMG_DIR):
-        for f_img in file_img:
-            dir_img = path.join(parent_img, f_img)
-            img_tiff = io.imread(dir_img)
-            pd_dict = {'Label': [], 
-            'Area': [], 
-            'YFP intensity total': [], 
-            'YFP background': [],
-            'mCherry intensity total': [],
-            'mCherry background': [], 
-            'Time': []}
-            for parent, dir, file in walk(MASK_DIR):
-                for f in file:
-                    if f_img[:10] == f[:10]:
-                        if path.exists(path.join(DATA_DIR, 'YFP_ref', f)):
-                            continue
-                        dir_mask = path.join(parent, f)
-                        timepoint = int(f[11:13])
-                        vals = CalcFluo(img_tiff[timepoint, ...], dir_mask, f, timepoint)
-                        pd_dict['Area'].append(vals[0])
-                        pd_dict['YFP intensity total'].append(vals[1])
-                        pd_dict['YFP background'].append(vals[2])
-                        pd_dict['mCherry intensity total'].append(vals[3])
-                        pd_dict['mCherry background'].append(vals[4])
-                        pd_dict['Time'].append(timepoint)
-                        pd_dict['Label'].append(f_img)
-            if len(pd_dict['Area']):
-                df = pd.DataFrame(pd_dict, dtype = 'uint32')
-                df.to_csv(path.join(DATA_DIR, 'fluorescence.csv'), index=False, mode='a', header=not path.exists(path.join(DATA_DIR, 'fluorescence.csv')))
-    t1 = time.time()
-    with open(path.join(DATA_DIR, 'log'), 'a') as log:
-        log.write('-'*10 + 'Fluorescence' + '-'*10 + '\n')
-        log.write('Started at: ' + T_START + '\n')
-        log.write('DATA_DIR: ' + DATA_DIR + '\n')
-        log.write('Totaltime in min: ' + str(round((t1 - t0) / 60, 2)) + '\n')
+    LOC = 0
+    for parent_m, folder_m, file_m in walk(DATA_DIR):
+        if 'ref.txt' in file_m:
+            flag = False
+            t0 = time.time()
+            data_dir = parent_m
+            img_dir = path.join(data_dir, [folder for folder in listdir(data_dir) if folder.endswith('tiff')][0])
+            mask_dir = path.join(data_dir, 'mask')
+            if not path.exists(path.join(data_dir, 'YFP_ref')):
+                mkdir(path.join(data_dir, 'YFP_ref'))
+            if not path.exists(path.join(data_dir, 'mcherry_ref')):
+                mkdir(path.join(data_dir, 'mcherry_ref'))
+            for parent_img, dir_img, file_img in walk(img_dir):
+                for f_img in file_img:
+                    if START <= LOC <= STOP:
+                        flag = True
+                        dir_img = path.join(parent_img, f_img)
+                        img_tiff = io.imread(dir_img)
+                        pd_dict = {'Label': [], 
+                        'Area': [], 
+                        'YFP intensity total': [], 
+                        'YFP background': [],
+                        'mCherry intensity total': [],
+                        'mCherry background': [], 
+                        'Time': []}
+                        for parent, dir, file in walk(mask_dir):
+                            for f in file:
+                                if f_img.removesuffix('.tiff').split('_')[2] == f.removesuffix('.png').split('_')[2]:
+                                    if path.exists(path.join(data_dir, 'YFP_ref', f)):
+                                        continue
+                                    dir_mask = path.join(parent, f)
+                                    timepoint = int(f.removesuffix('.png').split('_')[3])
+                                    vals = CalcFluo(img_tiff[timepoint, ...], dir_mask, f, timepoint)
+                                    pd_dict['Area'].append(vals[0])
+                                    pd_dict['YFP intensity total'].append(vals[1])
+                                    pd_dict['YFP background'].append(vals[2])
+                                    pd_dict['mCherry intensity total'].append(vals[3])
+                                    pd_dict['mCherry background'].append(vals[4])
+                                    pd_dict['Time'].append(timepoint)
+                                    pd_dict['Label'].append(f_img)
+                        if len(pd_dict['Area']):
+                            df = pd.DataFrame(pd_dict, dtype = 'uint32')
+                            df.to_csv(path.join(data_dir, 'fluorescence.csv'), index=False, mode='a', 
+                            header=not path.exists(path.join(data_dir, 'fluorescence.csv')))
+                    LOC += 1
+            t1 = time.time()
+            if flag:
+                with open(path.join(data_dir, 'log'), 'a') as log:
+                    log.write('-'*10 + 'Fluorescence' + '-'*10 + '\n')
+                    log.write('Started at: ' + T_START + '\n')
+                    log.write('DATA_DIR: ' + data_dir + '\n')
+                    log.write('START: %d STOP: %d' % (START % 36, STOP % 36))
+                    log.write('Totaltime in min: ' + str(round((t1 - t0) / 60, 2)) + '\n')
 

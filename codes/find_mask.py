@@ -9,6 +9,10 @@ import json
 ARG = sys.argv
 DATA_DIR = path.join(path.dirname(getcwd()), 'data', ARG[1])
 T_START = time.asctime(time.localtime(time.time()))
+START = int(ARG[2])
+if not int(ARG[3]): # set to 0 to run through all files
+    ARG[3] = 10000
+STOP = int(ARG[2]) + int(ARG[3]) - 1
 CHANNEL = {'phase': 0, 'mcherry': 2, 'YFP': 1}
 PARAS = {
     'MASK': {'close_radius': 6, # the radius for the closing step
@@ -177,9 +181,11 @@ def FindMask(file_name, img_raw, paras_close, paras_sharp, paras_rb, paras_gauss
     return img_res
 
 if __name__ == '__main__':
-    t0 = time.time()
+    LOC = 0
     for parent_m, folder_m, file_m in walk(DATA_DIR):
         if 'ref.txt' in file_m:
+            flag = False
+            t0 = time.time()
             data_dir = parent_m
             if not path.exists(path.join(data_dir, 'paras.json')):
                 with open(path.join(data_dir, 'paras.json'), 'w') as file:
@@ -196,30 +202,33 @@ if __name__ == '__main__':
             for parent, dir, file in walk(data_dir):
                 if( 'tiff' in parent):
                     for f in file:
-                        raw_stack = io.imread(path.join(parent, f))
-                        THRESH = []
-                        AREA = []
-                        for i in range(raw_stack.shape[0]):
-                            raw_img = raw_stack[i, ..., CHANNEL['mcherry']]
-                            rb_radius = PARAS_MASK['rolling_ball_radius_lower_bound'] + int(i * rb_range / raw_stack.shape[0])
-                            gauss_radius = int(rb_radius * 1.5)
-                            file_name = path.join(data_dir, 'mask_ref', ('_'.join((path.splitext(f)[0], str(i).zfill(2))) + '.png'))
-                            if path.exists(file_name):
-                                continue
-                            mask = FindMask(file_name, raw_img,  paras_close = PARAS_MASK['close_radius'],
-                                            paras_sharp = [PARAS_MASK['sharp_radius'], PARAS_MASK['sharp_amount']],  
-                                            paras_rb = rb_radius, paras_gauss = gauss_radius, paras_hys = PARAS_MASK['hysteresis_tolerance'], 
-                                            paras_hat = PARAS_MASK['tophat_radius'], paras_hist = PARAS_MASK['histogram_nbin'], 
-                                            flat = PARAS_MASK['flat'], jump = PARAS_MASK['jump_thr'], jump_a = PARAS_MASK['jump_area'])
-                            # np.save(file_name.replace('mask_ref', 'mask', 1).replace('.png', '.npy', 1), np.bool_(mask))
-                            io.imsave(file_name.replace('mask_ref', 'mask', 1), mask)
-                            # np.savetxt(file_name.replace('mask_ref', 'mask', 1).replace('.png', '.csv', 1), mask, delimiter = ',')
+                        if START <= LOC <= STOP:
+                            flag = True
+                            raw_stack = io.imread(path.join(parent, f))
+                            THRESH = []
+                            AREA = []
+                            for i in range(raw_stack.shape[0]):
+                                raw_img = raw_stack[i, ..., CHANNEL['mcherry']]
+                                rb_radius = PARAS_MASK['rolling_ball_radius_lower_bound'] + int(i * rb_range / raw_stack.shape[0])
+                                gauss_radius = int(rb_radius * 1.5)
+                                file_name = path.join(data_dir, 'mask_ref', ('_'.join((path.splitext(f)[0], str(i).zfill(2))) + '.png'))
+                                if path.exists(file_name):
+                                    continue
+                                mask = FindMask(file_name, raw_img,  paras_close = PARAS_MASK['close_radius'],
+                                                paras_sharp = [PARAS_MASK['sharp_radius'], PARAS_MASK['sharp_amount']],  
+                                                paras_rb = rb_radius, paras_gauss = gauss_radius, paras_hys = PARAS_MASK['hysteresis_tolerance'], 
+                                                paras_hat = PARAS_MASK['tophat_radius'], paras_hist = PARAS_MASK['histogram_nbin'], 
+                                                flat = PARAS_MASK['flat'], jump = PARAS_MASK['jump_thr'], jump_a = PARAS_MASK['jump_area'])
+                                # np.save(file_name.replace('mask_ref', 'mask', 1).replace('.png', '.npy', 1), np.bool_(mask))
+                                io.imsave(file_name.replace('mask_ref', 'mask', 1), mask)
+                                # np.savetxt(file_name.replace('mask_ref', 'mask', 1).replace('.png', '.csv', 1), mask, delimiter = ',')
+                        LOC += 1
             t1 = time.time()
-            with open(path.join(data_dir, 'log'), 'a') as log:
-                log = open(path.join(data_dir, 'log'), 'a')
-                log.write('-'*10 + 'Masking' + '-'*10 + '\n')
-                log.write('Started at: ' + T_START + '\n')
-                log.write('DATA_DIR: ' + data_dir + '\n')
-                log.write('Total time in min: ' + str(round((t1 - t0) / 60, 2)) + '\n')
-    # log.close()
-    # print("DONE")
+            if flag:
+                with open(path.join(data_dir, 'log'), 'a') as log:
+                    log = open(path.join(data_dir, 'log'), 'a')
+                    log.write('-'*10 + 'Masking' + '-'*10 + '\n')
+                    log.write('Started at: ' + T_START + '\n')
+                    log.write('DATA_DIR: ' + data_dir + '\n')
+                    log.write('START: %d STOP: %d' % (START % 36, STOP % 36))
+                    log.write('Total time in min: ' + str(round((t1 - t0) / 60, 2)) + '\n')
