@@ -1,13 +1,13 @@
 import matplotlib.pyplot as plt
 from skimage import io, filters, util, restoration, morphology
-import os
+from os import path, getcwd, walk, mkdir
 import time
 import numpy as np
 import sys
 import json
 
 ARG = sys.argv
-DATA_DIR = os.path.join(os.path.dirname(os.getcwd()), 'data', ARG[1])
+DATA_DIR = path.join(path.dirname(getcwd()), 'data', ARG[1])
 T_START = time.asctime(time.localtime(time.time()))
 CHANNEL = {'phase': 0, 'mcherry': 2, 'YFP': 1}
 PARAS = {
@@ -65,7 +65,7 @@ def FindMin(hist, bins, thresholds, window_width, flat, ub, bb):
     # plt.close()
     return diff_ss_min, bins_sss_min, thresh_m, area_exposed
 
-@profile
+# @profile
 def FindMask(file_name, img_raw, paras_close, paras_sharp, paras_rb, paras_gauss, paras_hys, paras_hat, paras_hist, flat, jump, jump_a):
     img_filled = morphology.closing(img_raw, morphology.disk(paras_close))
     # img_filled = morphology.diameter_closing(img_raw, diameter_threshold = 6)
@@ -178,33 +178,33 @@ def FindMask(file_name, img_raw, paras_close, paras_sharp, paras_rb, paras_gauss
 
 if __name__ == '__main__':
     t0 = time.time()
-    for parent_m, folder_m, file_m in os.walk(DATA_DIR):
+    for parent_m, folder_m, file_m in walk(DATA_DIR):
         if 'ref.txt' in file_m:
             data_dir = parent_m
-            if not os.path.exists(os.path.join(data_dir, 'paras.json')):
-                with open(os.path.join(data_dir, 'paras.json'), 'w') as file:
+            if not path.exists(path.join(data_dir, 'paras.json')):
+                with open(path.join(data_dir, 'paras.json'), 'w') as file:
                     js = json.dump(PARAS, file)
-            with open(os.path.join(data_dir, 'paras.json'), 'r') as file:
+            with open(path.join(data_dir, 'paras.json'), 'r') as file:
                 paras = json.load(file)
             PARAS_MASK = paras['MASK']
             PARAS_MIN = paras['MIN']
             rb_range = PARAS_MASK['rolling_ball_radius_upper_bound'] - PARAS_MASK['rolling_ball_radius_lower_bound']
-            if not os.path.exists(os.path.join(data_dir, 'mask_ref')):
-                os.mkdir(os.path.join(data_dir, 'mask_ref'))
-            if not os.path.exists(os.path.join(data_dir, 'mask')):
-                os.mkdir(os.path.join(data_dir, 'mask'))
-            for parent, dir, file in os.walk(data_dir):
+            if not path.exists(path.join(data_dir, 'mask_ref')):
+                mkdir(path.join(data_dir, 'mask_ref'))
+            if not path.exists(path.join(data_dir, 'mask')):
+                mkdir(path.join(data_dir, 'mask'))
+            for parent, dir, file in walk(data_dir):
                 if( 'tiff' in parent):
                     for f in file:
-                        raw_stack = io.imread(os.path.join(parent, f))
+                        raw_stack = io.imread(path.join(parent, f))
                         THRESH = []
                         AREA = []
                         for i in range(raw_stack.shape[0]):
                             raw_img = raw_stack[i, ..., CHANNEL['mcherry']]
                             rb_radius = PARAS_MASK['rolling_ball_radius_lower_bound'] + int(i * rb_range / raw_stack.shape[0])
                             gauss_radius = int(rb_radius * 1.5)
-                            file_name = os.path.join(data_dir, 'mask_ref', ('_'.join((os.path.splitext(f)[0], str(i).zfill(2))) + '.png'))
-                            if os.path.exists(file_name):
+                            file_name = path.join(data_dir, 'mask_ref', ('_'.join((path.splitext(f)[0], str(i).zfill(2))) + '.png'))
+                            if path.exists(file_name):
                                 continue
                             mask = FindMask(file_name, raw_img,  paras_close = PARAS_MASK['close_radius'],
                                             paras_sharp = [PARAS_MASK['sharp_radius'], PARAS_MASK['sharp_amount']],  
@@ -215,8 +215,8 @@ if __name__ == '__main__':
                             io.imsave(file_name.replace('mask_ref', 'mask', 1), mask)
                             # np.savetxt(file_name.replace('mask_ref', 'mask', 1).replace('.png', '.csv', 1), mask, delimiter = ',')
             t1 = time.time()
-            with open(os.path.join(data_dir, 'log'), 'a') as log:
-                log = open(os.path.join(data_dir, 'log'), 'a')
+            with open(path.join(data_dir, 'log'), 'a') as log:
+                log = open(path.join(data_dir, 'log'), 'a')
                 log.write('-'*10 + 'Masking' + '-'*10 + '\n')
                 log.write('Started at: ' + T_START + '\n')
                 log.write('DATA_DIR: ' + data_dir + '\n')

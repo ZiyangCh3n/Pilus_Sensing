@@ -1,28 +1,28 @@
 import numpy as np
 import pandas as pd
 # from nd2reader import ND2Reader
-import matplotlib.pyplot as plt
-from skimage import io
-import os
-import subprocess
+# import matplotlib.pyplot as plt
+# from skimage import io
+from os import path, getcwd, walk, makedirs, rename
+from subprocess import run
 import sys
 import time
 
 ARGS = sys.argv
-DATA_DIR = os.path.join(os.path.dirname(os.getcwd()), 'data', ARGS[1])
+DATA_DIR = path.join(path.dirname(getcwd()), 'data', ARGS[1])
 T_START = time.asctime(time.localtime(time.time()))
 CHANNEL = {'phase': 0, 'mcherry': 2, 'YFP': 1}
-BFTOOL_DIR = os.path.join(os.path.dirname(os.getcwd()), 'bftools')
+BFTOOL_DIR = path.join(path.dirname(getcwd()), 'bftools')
 skip_preprocess = False
 
 def Rename_Files(data_dir):
     ref = {}
-    for line in open(os.path.join(data_dir, 'ref.txt')):
+    for line in open(path.join(data_dir, 'ref.txt')):
         a = line.strip().split(',')
         ref[a[0]] = a[1:]
 
-    for parent, dir, file in os.walk(data_dir):
-        if not len(dir):
+    for parent, dir, file in walk(data_dir):
+        if not (len(dir) or 'tiff' in parent):
             n_replicate = int(len(file) / len(ref['conc']))
             rename_list = ['_'.join([strain, str(float(conc)), str(rep).zfill(2)]) + '.nd2' 
             for strain in ref['strain'] 
@@ -30,43 +30,43 @@ def Rename_Files(data_dir):
             for rep in np.arange(n_replicate)]
             print(rename_list)
             for f,r in zip(file, rename_list):
-                if os.path.exists(os.path.join(parent, r)):
+                if path.exists(path.join(parent, r)):
                     continue
-                os.rename(os.path.join(parent, f), os.path.join(parent, r))
+                rename(path.join(parent, f), path.join(parent, r))
             # if not('_nd2' in parent):    
             #     os.rename(parent, parent + '_nd2')
             make_folder = parent + '_tiff'
-            if not os.path.exists(make_folder):
-                os.makedirs(make_folder)
+            if not path.exists(make_folder):
+                makedirs(make_folder)
 
 def GetTiff(data_dir):
     # subprocess.run(['chmod', '+x', './bfconvert'], cwd = BFTOOL_DIR, shell = True)
     # subprocess.run([BFTOOL_DIR, 'chmod', '+x', './bfconvert'])
-    for parent, dir, file in os.walk(data_dir):
+    for parent, dir, file in walk(data_dir):
         file = [f for f in file if f.endswith('.nd2')] 
         if len(file):
             print(file)
             for f ,i in zip(file, np.arange(len(file))):
-                input_dir = os.path.join(parent, f)
-                output_dir = os.path.join(os.path.join(parent.replace('_nd2', '_tiff'), f.replace('.nd2', '.tiff')))
-                if os.path.exists(output_dir):
+                input_dir = path.join(parent, f)
+                output_dir = path.join(parent + '_tiff', f.replace('.nd2', '.tiff'))
+                if path.exists(output_dir):
                     continue
                 # command = 'bfconvert ' + input_dir + ' ' + output_dir
                 # subprocess.run(['./bfconvert', input_dir, output_dir], cwd = BFTOOL_DIR, shell = True)
                 # subprocess.Popen(['./bfconvert', input_dir, output_dir], cwd = BFTOOL_DIR, shell = True) # This is faster
-                subprocess.run([os.path.join(BFTOOL_DIR, 'bfconvert'), input_dir, output_dir])
+                run([path.join(BFTOOL_DIR, 'bfconvert'), input_dir, output_dir], shell = sys.platform == 'win32')
                 # print(f'{i + 1} out of {len(file)} convertion finished.')
 
 if __name__ == '__main__':
     t0 = time.time()
     if not skip_preprocess:
-        for parent, dir, file in os.walk(DATA_DIR):
+        for parent, dir, file in walk(DATA_DIR):
             if not len(dir):
-                data_dir = os.path.dirname(parent)
+                data_dir = path.dirname(parent)
                 Rename_Files(data_dir)
                 GetTiff(data_dir)
     t1 = time.time()
-    with open(os.path.join(DATA_DIR, 'log'), 'a') as log:
+    with open(path.join(DATA_DIR, 'log'), 'a') as log:
         log.write('-' * 10 + 'CONVERSION' + '-' * 10 + '\n')
         log.write('Created at: ' + T_START + '\n')
         log.write('DATA_DIR: ' + DATA_DIR + '\n')
