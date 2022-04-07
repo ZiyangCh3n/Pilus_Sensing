@@ -43,7 +43,7 @@ def GetMasked(img, mask, filename, channel, paras_rb = [150, 225]):
     plt.close()
     return img_masked, bg_normal * mask
 
-
+@profile
 def CalcFluo(img_tiff, dir_mask, filename, timepoint):
     # img_stack = io.imread(dir_img)
     # img_raw = img_stack[timepoint, ..., YFP]

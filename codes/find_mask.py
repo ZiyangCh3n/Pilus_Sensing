@@ -65,7 +65,7 @@ def FindMin(hist, bins, thresholds, window_width, flat, ub, bb):
     # plt.close()
     return diff_ss_min, bins_sss_min, thresh_m, area_exposed
 
-
+@profile
 def FindMask(file_name, img_raw, paras_close, paras_sharp, paras_rb, paras_gauss, paras_hys, paras_hat, paras_hist, flat, jump, jump_a):
     img_filled = morphology.closing(img_raw, morphology.disk(paras_close))
     # img_filled = morphology.diameter_closing(img_raw, diameter_threshold = 6)
