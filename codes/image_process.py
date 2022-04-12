@@ -44,6 +44,7 @@ def GetTiff(data_dir):
     # subprocess.run([BFTOOL_DIR, 'chmod', '+x', './bfconvert'])
     for parent, dir, file in walk(data_dir):
         file = [f for f in file if f.endswith('.nd2')] 
+        file.sort()
         if len(file):
             print(file)
             for f ,i in zip(file, np.arange(len(file))):

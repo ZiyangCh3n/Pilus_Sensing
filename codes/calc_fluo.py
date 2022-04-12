@@ -71,6 +71,7 @@ if __name__ == '__main__':
             if not path.exists(path.join(data_dir, 'mcherry_ref')):
                 mkdir(path.join(data_dir, 'mcherry_ref'))
             for parent_img, dir_img, file_img in walk(img_dir):
+                file_img.sort()
                 for f_img in file_img:
                     if START <= LOC <= STOP:
                         flag = True
@@ -84,6 +85,7 @@ if __name__ == '__main__':
                         'mCherry background': [], 
                         'Time': []}
                         for parent, dir, file in walk(mask_dir):
+                            file.sort()
                             for f in file:
                                 if f_img.removesuffix('.tiff').split('_')[2] == f.removesuffix('.png').split('_')[2]:
                                     if path.exists(path.join(data_dir, 'YFP_ref', f)):

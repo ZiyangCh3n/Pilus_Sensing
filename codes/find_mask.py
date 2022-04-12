@@ -201,6 +201,7 @@ if __name__ == '__main__':
                 mkdir(path.join(data_dir, 'mask'))
             for parent, dir, file in walk(data_dir):
                 if( 'tiff' in parent):
+                    file.sort()
                     for f in file:
                         if START <= LOC <= STOP:
                             flag = True

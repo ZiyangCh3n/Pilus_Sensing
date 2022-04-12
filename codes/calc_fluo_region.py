@@ -22,7 +22,7 @@ if not int(ARG[3]): # set to 0 to run through all files
     ARG[3] = 10000
 STOP = int(ARG[2]) + int(ARG[3]) - 1
 
-def GetImageBgHist(img, channel, tp, paras_rb = [50, 50]):
+def GetImageBgHist(img, channel, tp, paras_rb = [150, 225]):
     img_raw = img[tp, ..., CHANNEL[channel]]
     bg = rolling_ball(img_raw, radius = paras_rb[0])
     bg_normal = img_as_uint(rank.mean(img_as_uint(bg.astype(int)), selem = disk(paras_rb[1])))
@@ -122,16 +122,18 @@ def CalcFluoByRegion(img, mask, centroid0, ids0, filename, tp):
     stats = pd.DataFrame.from_dict(stats, orient = 'index').reset_index().rename(columns = {'index': 'timepoint'})
     return centroid, ids, stats
 
-def CalcFluoMain(img, mask_dir, position):
+def CalcFluoMain(img, mask_dir, lb):
     centroid0 = []
     ids0 = []
     # dict_df = {}
     
     for parent, folder, file in walk(mask_dir):
+        file.sort()
         for f in file:
+            label_mask = f.removesuffix('.png')[:-3]
             tp_mask = int(f.removesuffix('.png').split('_')[3])
             pos_mask = int(f.removesuffix('.png').split('_')[2])
-            if pos_mask == position:
+            if label_mask == lb:
                 # if path.exists(path.join(data_dir, 'fluo_ref', f)):
                 #     continue
                 mask = io.imread(path.join(parent, f))
@@ -160,13 +162,15 @@ if __name__ == '__main__':
             if not path.exists(path.join(data_dir, 'fluo_ref')):
                 mkdir(path.join(data_dir, 'fluo_ref'))
             for parent_img, folder_img, file_img in walk(imgfolder_dir):
+                file_img.sort()
                 for f in file_img:
                     if START <= LOC <= STOP:
                         flag = True
                         img_dir = path.join(parent_img, f)
                         img = io.imread(img_dir)
                         pos = int(f.removesuffix('.tiff').split('_')[2])
-                        CalcFluoMain(img, maskfolder_dir, pos)
+                        lb = f.removesuffix('.tiff')
+                        CalcFluoMain(img, maskfolder_dir, lb)
                     LOC += 1
             t1 = time.time()
             if flag:
