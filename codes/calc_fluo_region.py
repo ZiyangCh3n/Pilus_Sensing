@@ -136,7 +136,7 @@ def CalcFluoByRegion(img, mask, centroid0, ids0, filename, tp):
     plt.tight_layout()
     plt.savefig(path.join(data_dir, 'fluo_ref', filename), bbox_inches = 'tight')
     plt.close()
-    stats = pd.DataFrame.from_dict(stats, orient = 'index').reset_index().rename(columns = {'index': 'timepoint'})
+    stats = pd.DataFrame.from_dict(stats, orient = 'index').reset_index().rename(columns = {'index': 'id'})
     return centroid, ids, stats
 
 def CalcFluoMain(img, mask_dir, lb):
