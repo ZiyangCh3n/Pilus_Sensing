@@ -47,13 +47,30 @@ def GetMaskRegion(mask, centroid0, ids0, area_thr = 100):
     if len(centroid0):
         dist = cdist(centroid, centroid0, metric='euclidean')
         match = linear_sum_assignment(dist)
-        for r, r0 in zip(match[0], match[1]):
-            region = props[r]
-            mask_labeled[region.coords[:, 0], region.coords[:, 1]] = ids0[r0]
+        ids0_max = np.max(ids0)
+        for i in range(len(props)):
+            region = props[i]
+            idx = np.where(match[0] == i)[0]
+            if len(idx):
+                idx = idx[0]
+                mask_labeled[region.coords[:, 0], region.coords[:, 1]] = ids0[match[1][idx]]
+            else:
+                mask_labeled[region.coords[:, 0], region.coords[:, 1]] = ids0_max + 1
+                ids0_max += 1
+        props = regionprops(mask_labeled)
+        centroid = np.array([region.centroid for region in props])
+        ids = np.array([mask_labeled[region.coords[0][0], region.coords[0][1]] for region in props])        
+    # if len(centroid0):
+    #     dist = cdist(centroid, centroid0, metric='euclidean')
+    #     match = linear_sum_assignment(dist)
+        
         # for r, r0 in zip(match[0], match[1]):
-        #     mask_labeled[mask_labeled == ids[r]] = ids0[r0]
-        ids = ids0[match[1]]
-        centroid = centroid[match[0]]
+        #     region = props[r]
+        #     mask_labeled[region.coords[:, 0], region.coords[:, 1]] = ids0[r0]
+        # # for r, r0 in zip(match[0], match[1]):
+        # #     mask_labeled[mask_labeled == ids[r]] = ids0[r0]
+        # ids = ids0[match[1]]
+        # centroid = centroid[match[0]]
     
     return mask_labeled, centroid, ids
 
