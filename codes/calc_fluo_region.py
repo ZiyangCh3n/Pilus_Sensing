@@ -125,7 +125,7 @@ def CalcFluoByRegion(img, mask, centroid0, ids0, filename, tp):
         ax[2, 0].add_patch(rect)
         mask_region = np.zeros(mask.shape)
         mask_region[region.coords[:, 0], region.coords[:, 1]] = 1
-        row = {'Position': filename, 'Area': region.area, 
+        row = {'Filename': filename, 'Area': region.area, 
                'YFP intensity total': np.sum(yfp_bg_reduced * mask_region),
                'YFP background': np.sum(yfp_bg * mask_region), 
                'mCherry intensity total': np.sum(mc_bg_reduced * mask_region),
@@ -136,7 +136,7 @@ def CalcFluoByRegion(img, mask, centroid0, ids0, filename, tp):
     plt.tight_layout()
     plt.savefig(path.join(data_dir, 'fluo_ref', filename), bbox_inches = 'tight')
     plt.close()
-    stats = pd.DataFrame.from_dict(stats, orient = 'index').reset_index().rename(columns = {'index': 'id'})
+    stats = pd.DataFrame.from_dict(stats, orient = 'index').reset_index().rename(columns = {'index': 'ID'})
     return centroid, ids, stats
 
 def CalcFluoMain(img, mask_dir, lb):
