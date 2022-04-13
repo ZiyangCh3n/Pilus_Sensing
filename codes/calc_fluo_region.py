@@ -163,8 +163,8 @@ def CalcFluoMain(img, mask_dir, lb):
         
     # for key, val in zip(dict_df.keys(), dict_df.values()):
     #     dict_df[key] = pd.DataFrame.from_dict(val, orient = 'index').reset_index().rename(columns = {'index': 'timepoint'})
-        df.to_csv(path.join(data_dir, 'fluorescence',  START + '-' + STOP + '.csv'), index = False, mode = 'a',
-              header = not path.exists(path.join(data_dir, 'fluorescence',  START + '-' + STOP + '.csv')))
+        df.to_csv(path.join(data_dir, 'fluorescence',  str(START) + '-' + str(STOP) + '.csv'), index = False, mode = 'a',
+              header = not path.exists(path.join(data_dir, 'fluorescence',  str(START) + '-' + str(STOP) + '.csv')))
         # return df
                 
 if __name__ == '__main__':
