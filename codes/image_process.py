@@ -64,7 +64,6 @@ if __name__ == '__main__':
         for parent, dir, file in walk(DATA_DIR):
             # if not (len(dir) or 'tiff' in parent):
             if all(['.nd2' in f for f in file]) and len(file):
-                print(parent)
                 t0 = time.time()
                 data_dir = path.dirname(parent)
                 Rename_Files(data_dir)
