@@ -51,6 +51,7 @@ def GetTiff(data_dir):
                 input_dir = path.join(parent, f)
                 output_dir = path.join(parent + '_tiff', f.replace('.nd2', '.tiff'))
                 if path.exists(output_dir):
+                    print("EXIST: %s" % output_dir)
                     continue
                 # command = 'bfconvert ' + input_dir + ' ' + output_dir
                 # subprocess.run(['./bfconvert', input_dir, output_dir], cwd = BFTOOL_DIR, shell = True)
@@ -61,7 +62,9 @@ def GetTiff(data_dir):
 if __name__ == '__main__':
     if not skip_preprocess:
         for parent, dir, file in walk(DATA_DIR):
-            if not (len(dir) or 'tiff' in parent):
+            # if not (len(dir) or 'tiff' in parent):
+            if all(['.nd2' in f for f in file]) and len(file):
+                print(parent)
                 t0 = time.time()
                 data_dir = path.dirname(parent)
                 Rename_Files(data_dir)
