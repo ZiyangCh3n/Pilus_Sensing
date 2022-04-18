@@ -231,5 +231,5 @@ if __name__ == '__main__':
                     log.write('-'*10 + 'Masking' + '-'*10 + '\n')
                     log.write('Started at: ' + T_START + '\n')
                     log.write('DATA_DIR: ' + data_dir + '\n')
-                    log.write('START: %d STOP: %d' % (START % 36, STOP % 36))
+                    log.write('START: %d STOP: %d \n' % (START, STOP))
                     log.write('Total time in min: ' + str(round((t1 - t0) / 60, 2)) + '\n')
