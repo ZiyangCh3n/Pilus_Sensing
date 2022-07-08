@@ -181,6 +181,12 @@ def FindMask(file_name, img_raw, paras_close, paras_sharp, paras_rb, paras_gauss
     plt.close()
     return img_res
 
+def Reshape(raw):
+    tpcount = int(raw.shape[0] / 3)
+    temp = [raw[np.arange(tpcount) * 3, ...], raw[np.arange(tpcount) * 3 + 1, ...], raw[np.arange(tpcount) * 3 + 2, ...]]
+    out = np.stack(temp, axis=-1)
+    return out
+
 if __name__ == '__main__':
     LOC = 0
     for parent_m, folder_m, file_m in walk(DATA_DIR):
@@ -207,6 +213,8 @@ if __name__ == '__main__':
                         if START <= LOC <= STOP:
                             flag = True
                             raw_stack = io.imread(path.join(parent, f))
+                            if len(raw_stack.shape) < 4:
+                                raw_stack = Reshape(raw_stack)
                             THRESH = []
                             AREA = []
                             for i in range(raw_stack.shape[0]):
