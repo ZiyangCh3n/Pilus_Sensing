@@ -6,6 +6,8 @@
     "configurations": [
         
 
+        
+
     
         {
             "name": "Python: 当前文件",
@@ -13,7 +15,7 @@
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
-            "args": ["062222", "0", "1"],
+            "args": ["070722", "0", "1"],
             "justMyCode": true
         }
     ]

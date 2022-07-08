@@ -196,7 +196,10 @@ if __name__ == '__main__':
                         if len(img.shape) < 4:
                                 img = Reshape(img)
                         # pos = int(f.removesuffix('.tiff').split('_')[2])
-                        lb = f.removesuffix('.tiff')
+                        if f.endswith('.tiff'):
+                            lb = f.removesuffix('.tiff')
+                        else:
+                            lb = f.removesuffix('.tif')
                         CalcFluoMain(img, maskfolder_dir, lb)
                     LOC += 1
             t1 = time.time()
