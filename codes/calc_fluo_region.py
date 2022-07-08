@@ -166,7 +166,13 @@ def CalcFluoMain(img, mask_dir, lb):
         df.to_csv(path.join(data_dir, 'fluorescence',  str(START) + '-' + str(STOP) + '.csv'), index = False, mode = 'a',
               header = not path.exists(path.join(data_dir, 'fluorescence',  str(START) + '-' + str(STOP) + '.csv')))
         # return df
-                
+
+def Reshape(raw):
+    tpcount = int(raw.shape[0] / 3)
+    temp = [raw[np.arange(tpcount) * 3, ...], raw[np.arange(tpcount) * 3 + 1, ...], raw[np.arange(tpcount) * 3 + 2, ...]]
+    out = np.stack(temp, axis=-1)
+    return out
+
 if __name__ == '__main__':
     LOC = 0
     for parent_m, folder_m, file_m in walk(DATA_DIR):
@@ -187,6 +193,8 @@ if __name__ == '__main__':
                         flag = True
                         img_dir = path.join(parent_img, f)
                         img = io.imread(img_dir)
+                        if len(img.shape) < 4:
+                                img = Reshape(img)
                         # pos = int(f.removesuffix('.tiff').split('_')[2])
                         lb = f.removesuffix('.tiff')
                         CalcFluoMain(img, maskfolder_dir, lb)

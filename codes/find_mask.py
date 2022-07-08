@@ -53,7 +53,7 @@ def FindMin(hist, bins, thresholds, window_width, flat, ub, bb):
     thresholds = np.sort(np.append(thresholds, thresh_m))
     thresholds = [thr for thr in thresholds if bb < thr < ub]
     if not len(thresholds):
-        thresholds = [1000, 2000, 3000, 4000]
+        thresholds = [1000, 2000, 3000, 4000, 5000]
     inds = [np.where(bins_sss > thr)[0][0] for thr in thresholds]
     lb = [idx - width_half if idx > width_half else 0 for idx in inds]
     rb = [idx + width_half if idx + width_half < len(bins_sss) -1 else len(bins_sss) -1 for idx in inds]
@@ -132,7 +132,7 @@ def FindMask(file_name, img_raw, paras_close, paras_sharp, paras_rb, paras_gauss
     #     else:
     #         thresh = THRESH[-1]
     #         area = AREA[-1]
-    thresh = 5000
+    # thresh = 3000
     THRESH.append(thresh)
     AREA.append(area)
     
