@@ -132,7 +132,7 @@ def FindMask(file_name, img_raw, paras_close, paras_sharp, paras_rb, paras_gauss
     #     else:
     #         thresh = THRESH[-1]
     #         area = AREA[-1]
-    # thresh = 5000
+    thresh = 5000
     THRESH.append(thresh)
     AREA.append(area)
     

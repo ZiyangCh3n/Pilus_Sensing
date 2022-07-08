@@ -13,7 +13,6 @@ from os import path, walk, mkdir, listdir, getcwd
 import time, sys
 import pandas as pd
 
-TRACKING = False
 ARG = sys.argv
 CHANNEL = {'phase': 0, 'mcherry': 2, 'YFP': 1}
 DATA_DIR = path.join(path.dirname(getcwd()), 'data', ARG[1])
@@ -117,22 +116,21 @@ def CalcFluoByRegion(img, mask, centroid0, ids0, filename, tp):
     ax[2, 0].set_title("Mask Region")
     ax[2, 0].axis('off')
 
-    if TRACKING:  
-        for region in props:
-            ident = mask_labeled[region.coords[0][0], region.coords[0][1]]
-            ax[2, 0].text(region.centroid[1], region.centroid[0], str(ident), c = 'r')
-            minr, minc, maxr, maxc = region.bbox
-            rect = mpatches.Rectangle((minc, minr), maxc - minc, maxr - minr, 
-                                    fill = False, edgecolor = 'y', linewidth = 2)
-            ax[2, 0].add_patch(rect)
-            mask_region = np.zeros(mask.shape)
-            mask_region[region.coords[:, 0], region.coords[:, 1]] = 1
-            row = {'Filename': filename, 'Area': region.area, 
-                'YFP intensity total': np.sum(yfp_bg_reduced * mask_region),
-                'YFP background': np.sum(yfp_bg * mask_region), 
-                'mCherry intensity total': np.sum(mc_bg_reduced * mask_region),
-                'mCherry background': np.sum(mc_bg * mask_region)}
-            stats[ident] = row
+    for region in props:
+        ident = mask_labeled[region.coords[0][0], region.coords[0][1]]
+        ax[2, 0].text(region.centroid[1], region.centroid[0], str(ident), c = 'r')
+        minr, minc, maxr, maxc = region.bbox
+        rect = mpatches.Rectangle((minc, minr), maxc - minc, maxr - minr, 
+                                fill = False, edgecolor = 'y', linewidth = 2)
+        ax[2, 0].add_patch(rect)
+        mask_region = np.zeros(mask.shape)
+        mask_region[region.coords[:, 0], region.coords[:, 1]] = 1
+        row = {'Filename': filename, 'Area': region.area, 
+            'YFP intensity total': np.sum(yfp_bg_reduced * mask_region),
+            'YFP background': np.sum(yfp_bg * mask_region), 
+            'mCherry intensity total': np.sum(mc_bg_reduced * mask_region),
+            'mCherry background': np.sum(mc_bg * mask_region)}
+        stats[ident] = row
     
     
     plt.tight_layout()
