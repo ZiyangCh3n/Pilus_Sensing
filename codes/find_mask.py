@@ -32,6 +32,7 @@ PARAS = {
              'upper_bound': 4000, # the upper bound for threshold value
              'lower_bound': 600} # the lower bound for threshold value
 }
+HARD_THRESH = 4000 # force threshold to be this value, STUPID, set to 0 to mute
 
 def SmoothByAvg(window_width, x, y):
     cumsum = np.cumsum(y)
@@ -132,7 +133,8 @@ def FindMask(file_name, img_raw, paras_close, paras_sharp, paras_rb, paras_gauss
     #     else:
     #         thresh = THRESH[-1]
     #         area = AREA[-1]
-    # thresh = 3000
+    if HARD_THRESH:
+        thresh = HARD_THRESH
     THRESH.append(thresh)
     AREA.append(area)
     
