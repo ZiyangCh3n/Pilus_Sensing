@@ -32,7 +32,7 @@ PARAS = {
              'upper_bound': 4000, # the upper bound for threshold value
              'lower_bound': 600} # the lower bound for threshold value
 }
-HARD_THRESH = 4000 # force threshold to be this value, STUPID, set to 0 to mute
+HARD_THRESH = 0 # force threshold to be this value, STUPID, set to 0 to mute
 
 def SmoothByAvg(window_width, x, y):
     cumsum = np.cumsum(y)
@@ -216,7 +216,8 @@ if __name__ == '__main__':
                             flag = True
                             raw_stack = io.imread(path.join(parent, f))
                             if len(raw_stack.shape) < 4:
-                                raw_stack = Reshape(raw_stack)
+                                # raw_stack = raw_stack[np.newaxis, ...] # This is for images that only have 3 dims, with only one timepoint
+                                raw_stack = Reshape(raw_stack) # This is for stacked images that should have 4 dims but only have 3
                             THRESH = []
                             AREA = []
                             for i in range(raw_stack.shape[0]):

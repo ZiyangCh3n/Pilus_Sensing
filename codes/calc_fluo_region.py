@@ -182,6 +182,7 @@ if __name__ == '__main__':
             data_dir = parent_m
             imgfolder_dir = path.join(data_dir, [folder for folder in listdir(data_dir) if folder.endswith('tiff')][0])
             maskfolder_dir = path.join(data_dir, 'mask')
+            time.sleep(1)
             if not path.exists(path.join(data_dir, 'fluo_ref')):
                 mkdir(path.join(data_dir, 'fluo_ref'))
             if not path.exists(path.join(data_dir, 'fluorescence')):
@@ -194,7 +195,8 @@ if __name__ == '__main__':
                         img_dir = path.join(parent_img, f)
                         img = io.imread(img_dir)
                         if len(img.shape) < 4:
-                                img = Reshape(img)
+                            img = img[np.newaxis, ...] # This is for images that only have 3 dims, with only one timepoint
+                            # img = Reshape(img) # This is for stacked images that should have 4 dims but only have 3
                         # pos = int(f.removesuffix('.tiff').split('_')[2])
                         if f.endswith('.tiff'):
                             lb = f.removesuffix('.tiff')
