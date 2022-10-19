@@ -8,6 +8,8 @@ bftools/
 # data related
 data/
 job/
+out/
+err/
 *.out
 *.slurm
 paras.json
