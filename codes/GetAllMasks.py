@@ -198,10 +198,10 @@ if __name__ == '__main__':
                         img_name = ('_'.join((os.path.splitext(f)[0], str(i).zfill(2))) + '.png')
                         CreateMask(MASK_DIR, img_raw, img_name)
                     end_time = time.time()
-                    with open(os.path.join(ANALYSIS_DIR, 'progress_%S-%S.txt' % (START, STOP)), 'a') as w:
+                    with open(os.path.join(ANALYSIS_DIR, 'progress_%d-%d.txt' % (START, STOP)), 'a') as w:
                         w.write("Finished: %s, Time: %.2f s\n" % (f, end_time - start_time))
             LOC += 1
     t1 = time.time()
-    with open(os.path.join(ANALYSIS_DIR, 'progress_%S-%S.txt' % (START, STOP)), 'a') as w:
+    with open(os.path.join(ANALYSIS_DIR, 'progress_%d-%d.txt' % (START, STOP)), 'a') as w:
         w.write('TOTAL TIME: %.2f min' % ((t1 - t0) / 60))
                 
