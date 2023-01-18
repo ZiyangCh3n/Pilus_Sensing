@@ -23,7 +23,7 @@ CHANNEL = {'phase': 0, 'mcherry': 2, 'YFP': 1}
 ### local_threshold
 def LocalThresh(img):
     try:
-        block_size = 1001#1001
+        block_size = 501#1001
         local_thresh = filters.threshold_local(img, block_size)
         binary_local = img >= local_thresh
         return binary_local
@@ -48,7 +48,7 @@ def MultiOtsu(img):
 ### local_otsu
 def LocalOtsu(img):
     try:
-        footprint = morphology.disk(1001)#1001
+        footprint = morphology.disk(501) #1001
         local_otsu = filters.rank.otsu(img, footprint)
         binary_local = img > local_otsu
         return binary_local
