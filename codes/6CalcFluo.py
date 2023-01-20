@@ -65,7 +65,7 @@ def CalcFluoSlice(mc_raw, yfp_raw, img_name):
     yfp_bg = yfp0 - yfp
     mc_bg = mc0 - mc
 
-    stats = pd.DataFrame({'filename': img_name, 'yfp': [yfp], 'mc': [mc], 'yfp0': [yfp0], 'mc0': [mc0], 'yfp_bg': [yfp_bg], 'mc_bg': [mc_bg]})
+    stats = pd.DataFrame({'filename': img_name, 'yfp': [yfp], 'mc': [mc], 'yfp0': [yfp0], 'mc0': [mc0], 'yfp_bg': [yfp_bg], 'mc_bg': [mc_bg], 'area': [area]})
 
     # image output
     fig, ax = plt.subplots(2, 3, figsize = (15, 10))
