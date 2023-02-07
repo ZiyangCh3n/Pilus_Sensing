@@ -57,7 +57,8 @@ def CalcFluoSlice(mc_raw, yfp_raw, img_name):
     # calculate fluorescence
     yfp_nbg = Preprocess(yfp_raw)
     mc_nbg = Preprocess(mc_raw)
-    area = np.sum(mask != 0, dtype=np.uint64)
+    mask = mask.astype(np.bool)
+    area = np.sum(mask)
     yfp = np.sum(yfp_nbg * mask, dtype=np.uint64) / area
     mc = np.sum(mc_nbg * mask, dtype=np.uint64) / area
     yfp0 = np.sum(yfp_raw * mask, dtype=np.uint64) / area
