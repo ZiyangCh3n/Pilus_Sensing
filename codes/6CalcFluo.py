@@ -98,6 +98,7 @@ if __name__ == '__main__':
                 if f.endswith('.tif'):
                     img_dir = os.path.join(parent, f)
                     img_stack = io.imread(img_dir)
+                    img_stack = img_stack.astype(np.uint16)
                     slice_mc = np.arange(CHANNEL['mcherry'], img_stack.shape[0], 3)
                     slice_yfp = np.arange(CHANNEL['YFP'], img_stack.shape[0], 3)
                     for i in range(len(slice_mc)):
